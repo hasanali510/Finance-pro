@@ -1,0 +1,215 @@
+import { useMemo } from 'react';
+import { Transaction, Category } from '../types';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { format, parseISO, subMonths } from 'date-fns';
+import { motion } from 'framer-motion';
+import { TrendingUp, Activity, Award, Lightbulb } from 'lucide-react';
+
+interface AnalyticsProps {
+  transactions: Transaction[];
+  categories: Category[];
+}
+
+export function Analytics({ transactions, categories }: AnalyticsProps) {
+  const expenseTransactions = useMemo(() => transactions.filter(t => t.type === 'expense'), [transactions]);
+
+  const categoryData = useMemo(() => {
+    const map = new Map<string, number>();
+    expenseTransactions.forEach((t) => {
+      map.set(t.categoryId, (map.get(t.categoryId) || 0) + t.amount);
+    });
+    return Array.from(map.entries())
+      .map(([id, amount]) => ({
+        name: categories.find((c) => c.id === id)?.name || 'Unknown',
+        value: amount,
+        color: categories.find((c) => c.id === id)?.color || '#64748B',
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [expenseTransactions, categories]);
+
+  const monthlyData = useMemo(() => {
+    const data = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = subMonths(new Date(), i);
+      const monthStr = format(monthDate, 'MMM');
+      const amount = expenseTransactions
+        .filter((t) => format(parseISO(t.date), 'MMM yyyy') === format(monthDate, 'MMM yyyy'))
+        .reduce((sum, t) => sum + t.amount, 0);
+      data.push({ name: monthStr, amount });
+    }
+    return data;
+  }, [expenseTransactions]);
+
+  const totalExpense = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const averageDailyExpense = totalExpense / (monthlyData.length * 30 || 1);
+
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+
+  // Simple Insights
+  const insights = useMemo(() => {
+    const msgs = [];
+    if (categoryData.length > 0) {
+      msgs.push(`You spent most on ${categoryData[0].name} overall.`);
+    }
+    if (monthlyData.length >= 2) {
+      const lastMonth = monthlyData[monthlyData.length - 2].amount;
+      const thisMonth = monthlyData[monthlyData.length - 1].amount;
+      if (lastMonth > 0) {
+        const diff = ((thisMonth - lastMonth) / lastMonth) * 100;
+        if (diff > 0) {
+          msgs.push(`Your expenses increased ${diff.toFixed(0)}% from last month.`);
+        } else if (diff < 0) {
+          msgs.push(`Your expenses decreased ${Math.abs(diff).toFixed(0)}% from last month.`);
+        }
+      }
+    }
+    const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    if (totalIncome > 0) {
+      const saved = totalIncome - totalExpense;
+      const savedPercent = (saved / totalIncome) * 100;
+      if (savedPercent > 0) {
+        msgs.push(`You are saving ${savedPercent.toFixed(0)}% of your income.`);
+      }
+    }
+    return msgs;
+  }, [categoryData, monthlyData, totalExpense, transactions]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="pb-32 px-6 pt-12 space-y-8 max-w-md mx-auto"
+    >
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-white tracking-tight">Analytics</h1>
+        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
+          <Activity className="text-rose-400" size={20} />
+        </div>
+      </div>
+
+      {/* Smart Insights */}
+      {insights.length > 0 && (
+        <div className="glass-card p-5 border-emerald-500/20 bg-emerald-500/5">
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb className="text-emerald-400" size={18} />
+            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Smart Insights</h2>
+          </div>
+          <ul className="space-y-2">
+            {insights.map((msg, i) => (
+              <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
+                <span className="text-emerald-400 mt-1">•</span> {msg}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Insights Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="glass-card p-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 rounded-bl-full" />
+          <TrendingUp className="text-rose-400 mb-3" size={20} />
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Avg. Daily Exp.</p>
+          <p className="text-xl font-bold text-white">{formatCurrency(averageDailyExpense)}</p>
+        </div>
+        <div className="glass-card p-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-teal-500/10 rounded-bl-full" />
+          <Award className="text-teal-400 mb-3" size={20} />
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Top Category</p>
+          <p className="text-xl font-bold text-white truncate">{categoryData[0]?.name || 'N/A'}</p>
+        </div>
+      </div>
+
+      {/* Monthly Expense Trend */}
+      <div className="glass-card p-6">
+        <h2 className="text-lg font-semibold text-white mb-6">Expense Trend</h2>
+        <div className="h-48 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={monthlyData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+              <XAxis dataKey="name" stroke="#64748B" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="#64748B" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val/1000}k`} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                }}
+                itemStyle={{ color: '#F43F5E', fontWeight: 600 }}
+                labelStyle={{ color: '#94A3B8', marginBottom: '4px' }}
+                formatter={(value: number) => [formatCurrency(value), 'Expense']}
+              />
+              <Line type="monotone" dataKey="amount" stroke="#F43F5E" strokeWidth={3} dot={{ r: 4, fill: '#F43F5E', strokeWidth: 2, stroke: '#0F172A' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Category Breakdown (Pie Chart) */}
+      <div className="glass-card p-6">
+        <h2 className="text-lg font-semibold text-white mb-2">Expense Distribution</h2>
+        <div className="h-56 w-full relative">
+          {categoryData.length === 0 ? (
+            <p className="text-slate-500 text-center py-20">No data available.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                  }}
+                  itemStyle={{ fontWeight: 600 }}
+                  formatter={(value: number) => [formatCurrency(value), '']}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+          {/* Center Text */}
+          {categoryData.length > 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Total</p>
+              <p className="text-lg font-bold text-white">{formatCurrency(totalExpense)}</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Legend */}
+        {categoryData.length > 0 && (
+          <div className="mt-4 space-y-3">
+            {categoryData.map((cat, index) => {
+              const percentage = ((cat.value / totalExpense) * 100).toFixed(1);
+              return (
+                <div key={index} className="flex justify-between items-center text-sm">
+                  <span className="font-medium text-white flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                    {cat.name}
+                  </span>
+                  <span className="text-slate-400">{formatCurrency(cat.value)} ({percentage}%)</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}

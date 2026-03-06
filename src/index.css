@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-brand: #10B981;
+  --color-brand-glow: rgba(16, 185, 129, 0.4);
+  --color-bg-start: #0F172A;
+  --color-bg-end: #0B1120;
+  
+  --color-card-bg: rgba(255, 255, 255, 0.03);
+  --color-card-border: rgba(255, 255, 255, 0.08);
+  
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-tertiary: #475569;
+}
+
+@layer base {
+  body {
+    @apply bg-gradient-to-b from-[var(--color-bg-start)] to-[var(--color-bg-end)] text-[var(--color-text-primary)] font-sans antialiased min-h-screen selection:bg-brand/30;
+  }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 1rem);
+  }
+  
+  .glass-card {
+    @apply bg-[var(--color-card-bg)] backdrop-blur-xl border border-[var(--color-card-border)] rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)];
+  }
+  
+  .glass-panel {
+    @apply bg-[#1E293B]/80 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.2)];
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-300;
+  }
+}
