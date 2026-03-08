@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Delete } from 'lucide-react';
+import { UserSettings } from '../types';
+import { translations } from '../i18n';
 
 interface PinLockProps {
   correctPin: string;
   onUnlock: () => void;
+  settings: UserSettings;
 }
 
-export function PinLock({ correctPin, onUnlock }: PinLockProps) {
+export function PinLock({ correctPin, onUnlock, settings }: PinLockProps) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
+  const t = translations[settings.language || 'en'].pinLock;
 
   useEffect(() => {
     if (pin.length === 4) {
@@ -38,24 +42,24 @@ export function PinLock({ correctPin, onUnlock }: PinLockProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#0F172A] flex flex-col items-center justify-center px-6">
+    <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-[#0F172A] flex flex-col items-center justify-center px-6 transition-colors duration-300">
       <motion.div
         animate={error ? { x: [-10, 10, -10, 10, 0] } : {}}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.2 }}
         className="flex flex-col items-center"
       >
         <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mb-8">
-          <Lock size={32} className="text-emerald-400" />
+          <Lock size={32} className="text-emerald-500 dark:text-emerald-400" />
         </div>
-        <h1 className="text-2xl font-bold text-white mb-2">Enter PIN</h1>
-        <p className="text-slate-400 mb-12">Please enter your PIN to unlock.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t.enterPin}</h1>
+        <p className="text-slate-500 dark:text-slate-400 mb-12">{t.pleaseEnter}</p>
 
         <div className="flex gap-4 mb-16">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
               className={`w-4 h-4 rounded-full transition-colors ${
-                pin.length > i ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-slate-700'
+                pin.length > i ? 'bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.8)] dark:shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-slate-300 dark:bg-slate-700'
               } ${error ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]' : ''}`}
             />
           ))}
@@ -66,7 +70,7 @@ export function PinLock({ correctPin, onUnlock }: PinLockProps) {
             <button
               key={num}
               onClick={() => handlePress(num.toString())}
-              className="w-20 h-20 rounded-full bg-white/5 text-2xl font-semibold text-white flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors"
+              className="w-20 h-20 rounded-full bg-black/5 dark:bg-white/5 text-2xl font-semibold text-slate-900 dark:text-white flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 active:bg-black/20 dark:active:bg-white/20 transition-colors"
             >
               {num}
             </button>
@@ -74,13 +78,13 @@ export function PinLock({ correctPin, onUnlock }: PinLockProps) {
           <div />
           <button
             onClick={() => handlePress('0')}
-            className="w-20 h-20 rounded-full bg-white/5 text-2xl font-semibold text-white flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors"
+            className="w-20 h-20 rounded-full bg-black/5 dark:bg-white/5 text-2xl font-semibold text-slate-900 dark:text-white flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 active:bg-black/20 dark:active:bg-white/20 transition-colors"
           >
             0
           </button>
           <button
             onClick={handleDelete}
-            className="w-20 h-20 rounded-full bg-white/5 text-slate-400 flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors"
+            className="w-20 h-20 rounded-full bg-black/5 dark:bg-white/5 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 active:bg-black/20 dark:active:bg-white/20 transition-colors"
           >
             <Delete size={24} />
           </button>

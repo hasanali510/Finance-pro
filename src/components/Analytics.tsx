@@ -1,16 +1,21 @@
-import { useMemo } from 'react';
-import { Transaction, Category } from '../types';
+import { useState, useMemo } from 'react';
+import { Transaction, Category, UserSettings } from '../types';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO, subMonths } from 'date-fns';
-import { motion } from 'framer-motion';
-import { TrendingUp, Activity, Award, Lightbulb } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TrendingUp, Activity, Award, Lightbulb, Download, FileText } from 'lucide-react';
+import { translations } from '../i18n';
+import { generatePDFReport, ReportPeriod } from '../utils/pdfGenerator';
 
 interface AnalyticsProps {
   transactions: Transaction[];
   categories: Category[];
+  settings: UserSettings;
 }
 
-export function Analytics({ transactions, categories }: AnalyticsProps) {
+export function Analytics({ transactions, categories, settings }: AnalyticsProps) {
+  const t = translations[settings.language || 'en'].analytics;
+  const tDash = translations[settings.language || 'en'].dashboard;
   const expenseTransactions = useMemo(() => transactions.filter(t => t.type === 'expense'), [transactions]);
 
   const categoryData = useMemo(() => {
@@ -75,31 +80,95 @@ export function Analytics({ transactions, categories }: AnalyticsProps) {
     return msgs;
   }, [categoryData, monthlyData, totalExpense, transactions]);
 
+  const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  const handleGenerateReport = async (period: ReportPeriod) => {
+    setIsGeneratingReport(true);
+    setIsReportMenuOpen(false);
+    try {
+      await generatePDFReport({
+        transactions,
+        categories,
+        settings,
+        period,
+        chartElementId: 'analytics-pie-chart'
+      });
+    } catch (error) {
+      console.error('Error generating report:', error);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="pb-32 px-6 pt-12 space-y-8 max-w-md mx-auto"
+      className="pb-32 px-6 pt-12 space-y-8 max-w-xl mx-auto"
     >
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-white tracking-tight">Analytics</h1>
-        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
-          <Activity className="text-rose-400" size={20} />
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{t.title}</h1>
+        <div className="relative">
+          <button 
+            onClick={() => setIsReportMenuOpen(!isReportMenuOpen)}
+            disabled={isGeneratingReport || transactions.length === 0}
+            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center border border-black/5 dark:border-white/10 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+          >
+            {isGeneratingReport ? (
+              <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Download className="text-emerald-500 dark:text-emerald-400" size={20} />
+            )}
+          </button>
+
+          <AnimatePresence>
+            {isReportMenuOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsReportMenuOpen(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className="absolute right-0 top-12 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-black/5 dark:border-white/10 z-50 overflow-hidden"
+                >
+                  <div className="p-2 space-y-1">
+                    <div className="px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Export PDF Report
+                    </div>
+                    {(['weekly', 'monthly', 'yearly', 'total'] as ReportPeriod[]).map((period) => (
+                      <button
+                        key={period}
+                        onClick={() => handleGenerateReport(period)}
+                        className="w-full text-left px-3 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors flex items-center gap-2 capitalize"
+                      >
+                        <FileText size={16} className="text-emerald-500" />
+                        {period} Report
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       {/* Smart Insights */}
       {insights.length > 0 && (
-        <div className="glass-card p-5 border-emerald-500/20 bg-emerald-500/5">
+        <div className="glass-card p-5 border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5">
           <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="text-emerald-400" size={18} />
-            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Smart Insights</h2>
+            <Lightbulb className="text-emerald-500 dark:text-emerald-400" size={18} />
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Smart Insights</h2>
           </div>
           <ul className="space-y-2">
             {insights.map((msg, i) => (
-              <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
-                <span className="text-emerald-400 mt-1">•</span> {msg}
+              <li key={i} className="text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                <span className="text-emerald-500 dark:text-emerald-400 mt-1">•</span> {msg}
               </li>
             ))}
           </ul>
@@ -110,21 +179,21 @@ export function Analytics({ transactions, categories }: AnalyticsProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="glass-card p-5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 rounded-bl-full" />
-          <TrendingUp className="text-rose-400 mb-3" size={20} />
-          <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Avg. Daily Exp.</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(averageDailyExpense)}</p>
+          <TrendingUp className="text-rose-500 dark:text-rose-400 mb-3" size={20} />
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Avg. Daily Exp.</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white">{formatCurrency(averageDailyExpense)}</p>
         </div>
         <div className="glass-card p-5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 bg-teal-500/10 rounded-bl-full" />
-          <Award className="text-teal-400 mb-3" size={20} />
-          <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Top Category</p>
-          <p className="text-xl font-bold text-white truncate">{categoryData[0]?.name || 'N/A'}</p>
+          <Award className="text-teal-500 dark:text-teal-400 mb-3" size={20} />
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Top Category</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white truncate">{categoryData[0]?.name || 'N/A'}</p>
         </div>
       </div>
 
       {/* Monthly Expense Trend */}
       <div className="glass-card p-6">
-        <h2 className="text-lg font-semibold text-white mb-6">Expense Trend</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Expense Trend</h2>
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthlyData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
@@ -148,11 +217,11 @@ export function Analytics({ transactions, categories }: AnalyticsProps) {
       </div>
 
       {/* Category Breakdown (Pie Chart) */}
-      <div className="glass-card p-6">
-        <h2 className="text-lg font-semibold text-white mb-2">Expense Distribution</h2>
+      <div className="glass-card p-6" id="analytics-pie-chart">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t.expenseBreakdown}</h2>
         <div className="h-56 w-full relative">
           {categoryData.length === 0 ? (
-            <p className="text-slate-500 text-center py-20">No data available.</p>
+            <p className="text-slate-500 text-center py-20">{t.noData}</p>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -186,8 +255,8 @@ export function Analytics({ transactions, categories }: AnalyticsProps) {
           {/* Center Text */}
           {categoryData.length > 0 && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Total</p>
-              <p className="text-lg font-bold text-white">{formatCurrency(totalExpense)}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(totalExpense)}</p>
             </div>
           )}
         </div>
@@ -199,11 +268,11 @@ export function Analytics({ transactions, categories }: AnalyticsProps) {
               const percentage = ((cat.value / totalExpense) * 100).toFixed(1);
               return (
                 <div key={index} className="flex justify-between items-center text-sm">
-                  <span className="font-medium text-white flex items-center gap-2">
+                  <span className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
                     {cat.name}
                   </span>
-                  <span className="text-slate-400">{formatCurrency(cat.value)} ({percentage}%)</span>
+                  <span className="text-slate-500 dark:text-slate-400">{formatCurrency(cat.value)} ({percentage}%)</span>
                 </div>
               );
             })}

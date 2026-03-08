@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { Transaction, Category, ViewState, UserSettings, Account } from './types';
+import { Transaction, Category, ViewState, UserSettings, Account, Note } from './types';
 import { DEFAULT_CATEGORIES } from './constants';
 
 import { BottomNav } from './components/BottomNav';
@@ -17,14 +17,18 @@ import { Onboarding } from './components/Onboarding';
 import { PinLock } from './components/PinLock';
 import { AccountSelector } from './components/AccountSelector';
 
+import { Notes } from './components/Notes';
+import { Profile } from './components/Profile';
+
 interface MainAppProps {
   key?: string;
   account: Account;
   onSwitchAccount: () => void;
   onDeleteAccount: () => void;
+  onUpdateAccount: (updatedAccount: Account) => void;
 }
 
-function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
+function MainApp({ account, onSwitchAccount, onDeleteAccount, onUpdateAccount }: MainAppProps) {
   const [view, setView] = useState<ViewState>('dashboard');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -32,12 +36,15 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
   
   const [transactions, setTransactions] = useLocalStorage<Transaction[]>(`smart-income-transactions-${account.id}`, []);
   const [categories, setCategories] = useLocalStorage<Category[]>(`smart-income-categories-${account.id}`, DEFAULT_CATEGORIES);
+  const [notes, setNotes] = useLocalStorage<Note[]>(`smart-income-notes-${account.id}`, []);
   const [settings, setSettings] = useLocalStorage<UserSettings>(`smart-income-settings-${account.id}`, {
     currency: 'USD',
     monthlyBudget: 2000,
     savingsGoal: 500,
     pinLock: null,
     hasCompletedOnboarding: false,
+    language: 'en',
+    theme: 'dark',
   });
 
   useEffect(() => {
@@ -45,6 +52,33 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
       setIsUnlocked(true);
     }
   }, [settings.pinLock]);
+
+  useEffect(() => {
+    const applyTheme = () => {
+      if (settings.theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else if (settings.theme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        // System preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    };
+
+    applyTheme();
+
+    // Listen for system theme changes if set to 'system'
+    if (settings.theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme();
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [settings.theme]);
 
   const addToast = useCallback((message: string, type: ToastMessage['type'] = 'info') => {
     const id = uuidv4();
@@ -67,6 +101,26 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
     addToast('Transaction deleted', 'info');
   }, [setTransactions, addToast]);
+
+  const handleAddNote = useCallback((text: string) => {
+    const note: Note = {
+      id: uuidv4(),
+      text,
+      createdAt: Date.now(),
+    };
+    setNotes((prev) => [...prev, note]);
+    addToast('Note added', 'success');
+  }, [setNotes, addToast]);
+
+  const handleEditNote = useCallback((id: string, text: string) => {
+    setNotes((prev) => prev.map((n) => n.id === id ? { ...n, text } : n));
+    addToast('Note updated', 'success');
+  }, [setNotes, addToast]);
+
+  const handleDeleteNote = useCallback((id: string) => {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+    addToast('Note deleted', 'info');
+  }, [setNotes, addToast]);
 
   const handleAddCategory = useCallback((newCategory: Omit<Category, 'id'>) => {
     const category: Category = {
@@ -91,20 +145,21 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
     if (window.confirm('Are you sure you want to reset all data for this account? This cannot be undone.')) {
       setTransactions([]);
       setCategories(DEFAULT_CATEGORIES);
+      setNotes([]);
       addToast('Account data reset successfully', 'success');
     }
-  }, [setTransactions, setCategories, addToast]);
+  }, [setTransactions, setCategories, setNotes, addToast]);
 
   if (!settings.hasCompletedOnboarding) {
-    return <Onboarding onComplete={() => setSettings({ ...settings, hasCompletedOnboarding: true })} />;
+    return <Onboarding onComplete={() => setSettings({ ...settings, hasCompletedOnboarding: true })} settings={settings} />;
   }
 
   if (settings.pinLock && !isUnlocked) {
-    return <PinLock correctPin={settings.pinLock} onUnlock={() => setIsUnlocked(true)} />;
+    return <PinLock correctPin={settings.pinLock} onUnlock={() => setIsUnlocked(true)} settings={settings} />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0F172A] to-[#0B1120] text-slate-50 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-gradient-to-b dark:from-[#0F172A] dark:to-[#0B1120] text-slate-900 dark:text-slate-50 font-sans selection:bg-emerald-500/30 overflow-x-hidden transition-colors duration-300">
       <ToastContainer toasts={toasts} onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
       
       <AnimatePresence mode="wait">
@@ -116,6 +171,8 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
               categories={categories}
               settings={settings}
               onViewAll={() => setView('history')}
+              onProfileClick={() => setView('profile')}
+              onViewNotes={() => setView('notes')}
             />
           </motion.div>
         )}
@@ -124,6 +181,7 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
             <Analytics
               transactions={transactions}
               categories={categories}
+              settings={settings}
             />
           </motion.div>
         )}
@@ -133,6 +191,7 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
               transactions={transactions}
               categories={categories}
               onDelete={handleDeleteTransaction}
+              settings={settings}
             />
           </motion.div>
         )}
@@ -143,6 +202,7 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
               onAdd={handleAddCategory}
               onDelete={handleDeleteCategory}
               onBack={() => setView('settings')}
+              settings={settings}
             />
           </motion.div>
         )}
@@ -158,6 +218,29 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
               onSwitchAccount={onSwitchAccount}
               onDeleteAccount={onDeleteAccount}
               onResetData={handleResetData}
+              addToast={addToast}
+            />
+          </motion.div>
+        )}
+        {view === 'notes' && (
+          <motion.div key="notes" className="w-full h-full">
+            <Notes
+              notes={notes}
+              onAdd={handleAddNote}
+              onDelete={handleDeleteNote}
+              onEdit={handleEditNote}
+              settings={settings}
+            />
+          </motion.div>
+        )}
+        {view === 'profile' && (
+          <motion.div key="profile" className="w-full h-full">
+            <Profile
+              account={account}
+              onUpdateAccount={onUpdateAccount}
+              onBack={() => setView('dashboard')}
+              addToast={addToast}
+              settings={settings}
             />
           </motion.div>
         )}
@@ -167,6 +250,7 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
         currentView={view}
         onChangeView={setView}
         onAddClick={() => setIsAddModalOpen(true)}
+        settings={settings}
       />
 
       <AddTransactionModal
@@ -174,6 +258,7 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount }: MainAppProps) {
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleAddTransaction}
         categories={categories}
+        settings={settings}
       />
     </div>
   );
@@ -195,6 +280,10 @@ export default function App() {
     }
   };
 
+  const handleUpdateAccount = (updatedAccount: Account) => {
+    setAccounts(accounts.map(a => a.id === updatedAccount.id ? updatedAccount : a));
+  };
+
   const currentAccount = accounts.find(a => a.id === currentAccountId);
 
   if (!currentAccountId || !currentAccount) {
@@ -213,6 +302,7 @@ export default function App() {
       account={currentAccount}
       onSwitchAccount={() => setCurrentAccountId(null)}
       onDeleteAccount={handleDeleteAccount}
+      onUpdateAccount={handleUpdateAccount}
     />
   );
 }

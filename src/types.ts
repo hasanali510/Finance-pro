@@ -21,12 +21,20 @@ export type Transaction = {
   nextRecurrenceDate?: string;
 };
 
+export type Note = {
+  id: string;
+  text: string;
+  createdAt: number;
+};
+
 export type UserSettings = {
   currency: string;
   monthlyBudget: number;
   savingsGoal: number;
   pinLock: string | null;
   hasCompletedOnboarding: boolean;
+  language: 'en' | 'bn';
+  theme: 'dark' | 'light' | 'system';
 };
 
 export type Account = {
@@ -35,6 +43,10 @@ export type Account = {
   avatar: string;
   themeColor: string;
   createdAt: string;
+  profession?: string;
+  email?: string;
+  mobile?: string;
+  profileImage?: string;
 };
 
-export type ViewState = 'dashboard' | 'analytics' | 'history' | 'categories' | 'settings';
+export type ViewState = 'dashboard' | 'analytics' | 'history' | 'categories' | 'settings' | 'profile' | 'notes';
