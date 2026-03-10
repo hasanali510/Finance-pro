@@ -50,3 +50,11 @@ export type Account = {
 };
 
 export type ViewState = 'dashboard' | 'analytics' | 'history' | 'categories' | 'settings' | 'profile' | 'notes';
+
+declare global {
+  interface Window {
+    Android?: {
+      downloadFile: (base64: string, fileName: string, mimeType: string) => void;
+    };
+  }
+}

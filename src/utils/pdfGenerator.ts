@@ -173,6 +173,14 @@ export const generatePDFReport = async ({
   // 7. Save PDF
   const filename = `Hisab_Pro_Report_${format(now, 'yyyy-MM-dd')}.pdf`;
   try {
+    // Check if running inside the Android WebView app
+    if (window.Android && window.Android.downloadFile) {
+      // Get base64 string without the data URI prefix
+      const base64String = doc.output('datauristring').split(',')[1];
+      window.Android.downloadFile(base64String, filename, 'application/pdf');
+      return;
+    }
+
     const isLocalMobile = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
                           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
