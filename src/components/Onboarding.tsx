@@ -50,7 +50,7 @@ export function Onboarding({ onComplete, settings }: OnboardingProps) {
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -50 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.15 }}
           className="flex flex-col items-center text-center max-w-sm w-full"
         >
           <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-8 ${steps[step].color}`}>
@@ -68,7 +68,7 @@ export function Onboarding({ onComplete, settings }: OnboardingProps) {
           {steps.map((_, i) => (
             <div
               key={i}
-              className={`h-2 rounded-full transition-all duration-300 ${
+              className={`h-2 rounded-full transition-all duration-150 ${
                 i === step ? 'w-8 bg-emerald-500 dark:bg-emerald-400' : 'w-2 bg-slate-300 dark:bg-slate-700'
               }`}
             />

@@ -40,6 +40,7 @@ export function Categories({ categories, onAdd, onDelete, onBack, settings }: Ca
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.15 }}
       className="pb-32 px-6 pt-12 space-y-6 max-w-xl mx-auto"
     >
       <div className="flex items-center justify-between mb-6">
@@ -74,7 +75,7 @@ export function Categories({ categories, onAdd, onDelete, onBack, settings }: Ca
               ? 'linear-gradient(to right, #F43F5E, #F97316)' 
               : 'linear-gradient(to right, #10B981, #2DD4BF)'
           }}
-          transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
+          transition={{ type: 'spring', bounce: 0.2, duration: 0.15 }}
         />
         <button
           onClick={() => setActiveTab('expense')}

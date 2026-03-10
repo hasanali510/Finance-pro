@@ -3,7 +3,7 @@ import { Transaction, Category, UserSettings } from '../types';
 import { translations } from '../i18n';
 import { format, parseISO, isToday, isThisWeek, isThisMonth } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Trash2, Edit2 } from 'lucide-react';
+import { Search, Filter, Trash2, Edit2, FileText } from 'lucide-react';
 
 interface HistoryProps {
   transactions: Transaction[];
@@ -39,6 +39,16 @@ export function History({ transactions, categories, onDelete, settings }: Histor
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, filter, searchQuery, categories]);
 
+  const groupedTransactions = useMemo(() => {
+    const groups: { [key: string]: Transaction[] } = {};
+    filteredTransactions.forEach(t => {
+      const dateStr = format(parseISO(t.date), 'MMM dd, yyyy');
+      if (!groups[dateStr]) groups[dateStr] = [];
+      groups[dateStr].push(t);
+    });
+    return Object.entries(groups);
+  }, [filteredTransactions]);
+
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(val);
 
@@ -49,6 +59,7 @@ export function History({ transactions, categories, onDelete, settings }: Histor
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.15 }}
       className="pb-32 px-6 pt-12 space-y-6 max-w-xl mx-auto"
     >
       <div className="flex justify-between items-center mb-6">
@@ -84,7 +95,7 @@ export function History({ transactions, categories, onDelete, settings }: Histor
               <motion.div
                 layoutId="history-filter-indicator"
                 className="absolute inset-0 bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-full"
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.15 }}
               />
             )}
             <span className="relative z-10">{t.filters[f]}</span>
@@ -93,66 +104,70 @@ export function History({ transactions, categories, onDelete, settings }: Histor
       </div>
 
       {/* Transaction List */}
-      <div className="space-y-3">
+      <div className="space-y-6">
         <AnimatePresence mode="popLayout">
           {filteredTransactions.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="glass-card p-12 text-center text-slate-500 flex flex-col items-center justify-center"
+              className="glass-card p-12 text-center text-slate-500 flex flex-col items-center justify-center border border-black/5 dark:border-white/5"
             >
               <Search size={40} className="mb-4 text-slate-600 opacity-50" />
               <p>{t.noTransactionsFound}</p>
             </motion.div>
           ) : (
-            filteredTransactions.map((t) => {
-              const category = categories.find((c) => c.id === t.categoryId);
-              const isIncome = t.type === 'income';
-              return (
-                <motion.div
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  key={t.id}
-                  className="glass-card p-4 flex items-center justify-between group relative overflow-hidden"
-                >
-                  <div className="flex items-center gap-4 z-10">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner"
-                      style={{ backgroundColor: `${category?.color}20`, color: category?.color }}
-                    >
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category?.color }} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-900 dark:text-white">{category?.name || 'Unknown'}</p>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${isIncome ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400'}`}>
-                          {isIncome ? translations[settings.language || 'en'].dashboard.income : translations[settings.language || 'en'].dashboard.expense}
-                        </span>
+            groupedTransactions.map(([date, dayTransactions]) => (
+              <motion.div
+                key={date}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="space-y-3"
+              >
+                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-1">{date}</h3>
+                <div className="space-y-2">
+                  {dayTransactions.map((t) => {
+                    const category = categories.find((c) => c.id === t.categoryId);
+                    const isIncome = t.type === 'income';
+                    return (
+                      <div key={t.id} className="glass-card p-3.5 flex flex-col gap-2 group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border border-black/5 dark:border-white/5 relative overflow-hidden">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3.5">
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner"
+                              style={{ backgroundColor: `${category?.color}15`, color: category?.color }}
+                            >
+                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: category?.color }} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-slate-900 dark:text-white">{category?.name || 'Unknown'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{format(parseISO(t.date), 'hh:mm a')}</p>
+                            </div>
+                          </div>
+                          <div className="text-right flex items-center gap-3">
+                            <div className="flex flex-col items-end">
+                              <p className={`text-sm font-bold ${isIncome ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                                {isIncome ? '+' : '-'}{formatCurrency(t.amount)}
+                              </p>
+                              {t.note && (
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-[120px] truncate">{t.note}</p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => onDelete(t.id)}
+                              className="w-7 h-7 rounded-full bg-red-500/10 text-red-500 dark:text-red-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{format(parseISO(t.date), 'MMM dd, yyyy • HH:mm')}</p>
-                    </div>
-                  </div>
-                  <div className="text-right z-10 flex items-center gap-4">
-                    <div>
-                      <p className={`font-bold ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {isIncome ? '+' : '-'}{formatCurrency(t.amount)}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[80px]">{t.note || 'No note'}</p>
-                    </div>
-                    <button
-                      onClick={() => onDelete(t.id)}
-                      className="w-8 h-8 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })
+                    );
+                  })}
+                </div>
+              </motion.div>
+            ))
           )}
         </AnimatePresence>
       </div>

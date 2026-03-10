@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Transaction, Category, UserSettings, Account } from '../types';
 import { format, isThisMonth, isToday, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, ArrowDownRight, ArrowRight, Target, AlertCircle, Wallet, StickyNote } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, ArrowRight, Target, AlertCircle, Wallet, StickyNote, FileText } from 'lucide-react';
 import { THEME_COLORS } from './AccountSelector';
 import { translations } from '../i18n';
 
@@ -90,11 +90,17 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
             <Wallet className="text-white" size={20} />
           </div>
           <div>
-            <span className="text-slate-900 dark:text-white font-bold text-xl tracking-tight">FinancePro</span>
+            <span className="text-slate-900 dark:text-white font-bold text-xl tracking-tight">Hisab Pro</span>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{account.name}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onViewNotes}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm transition-transform active:scale-95"
+          >
+            <StickyNote size={18} />
+          </button>
           <button 
             onClick={onProfileClick}
             className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-lg ring-2 ring-black/5 dark:ring-white/10 transition-transform active:scale-95 overflow-hidden ${theme.bg} ${theme.text}`}
@@ -107,23 +113,6 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
           </button>
         </div>
       </div>
-
-      {/* Notes Card */}
-      <button 
-        onClick={onViewNotes}
-        className="glass-card p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border border-black/5 dark:border-white/5 w-full text-left"
-      >
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
-            <StickyNote className="text-emerald-500" size={24} />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">My Notes</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">View and manage your notes</p>
-          </div>
-        </div>
-        <ArrowRight className="text-slate-400" size={20} />
-      </button>
 
       {/* Header - Balance Card */}
       <div className="relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 shadow-xl shadow-indigo-500/20 border border-black/5 dark:border-white/10">
@@ -195,7 +184,7 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${budgetProgress}%` }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
                 className={`h-full rounded-full ${isOverBudget ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]'}`}
               />
             </div>
@@ -225,7 +214,7 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${savingsProgress}%` }}
-                transition={{ duration: 0.3, ease: "easeOut", delay: 0.1 }}
+                transition={{ duration: 0.15, ease: "easeOut", delay: 0.05 }}
                 className={`h-full rounded-full ${isSavingsGoalMet ? 'bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.4)]' : 'bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.4)]'}`}
               />
             </div>
@@ -270,24 +259,28 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
               const category = categories.find((c) => c.id === t.categoryId);
               const isIncome = t.type === 'income';
               return (
-                <div key={t.id} className="glass-card p-3.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border border-black/5 dark:border-white/5">
-                  <div className="flex items-center gap-3.5">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner"
-                      style={{ backgroundColor: `${category?.color}15`, color: category?.color }}
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: category?.color }} />
+                <div key={t.id} className="glass-card p-3.5 flex flex-col gap-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border border-black/5 dark:border-white/5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner"
+                        style={{ backgroundColor: `${category?.color}15`, color: category?.color }}
+                      >
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: category?.color }} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">{category?.name || 'Unknown'}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{format(parseISO(t.date), 'MMM dd, yyyy • hh:mm a')}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">{category?.name || 'Unknown'}</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{format(parseISO(t.date), 'MMM dd, yyyy')}</p>
+                    <div className="text-right flex flex-col items-end">
+                      <p className={`text-sm font-bold ${isIncome ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                        {isIncome ? '+' : '-'}{formatCurrency(t.amount)}
+                      </p>
+                      {t.note && (
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-[120px] truncate">{t.note}</p>
+                      )}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-bold ${isIncome ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
-                      {isIncome ? '+' : '-'}{formatCurrency(t.amount)}
-                    </p>
-                    <p className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[80px]">{t.note || 'No note'}</p>
                   </div>
                 </div>
               );

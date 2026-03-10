@@ -95,10 +95,38 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
     return doc;
   };
 
+  const downloadFile = (doc: jsPDF, filename: string) => {
+    try {
+      // Check if running locally on mobile where downloads might be blocked
+      const isLocalMobile = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
+                            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isLocalMobile) {
+        // Fallback for local mobile: open PDF in new tab/window as data URI
+        const dataUri = doc.output('datauristring');
+        const win = window.open();
+        if (win) {
+          win.document.write('<iframe src="' + dataUri + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+          win.document.title = filename;
+        } else {
+          // If popup blocked, try standard save
+          doc.save(filename);
+        }
+      } else {
+        // Standard save for web
+        doc.save(filename);
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      // Last resort
+      doc.save(filename);
+    }
+  };
+
   const handleExportPDF = () => {
     try {
       const doc = generatePDF();
-      doc.save(`${account.name.replace(/\s+/g, '_')}_Transactions.pdf`);
+      downloadFile(doc, `${account.name.replace(/\s+/g, '_')}_Transactions.pdf`);
       addToast('PDF downloaded successfully', 'success');
     } catch (error) {
       console.error('PDF Export Error:', error);
@@ -119,7 +147,7 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
       try {
         const doc = generatePDF();
         // We download the PDF as a fallback since we can't actually email it without a backend
-        doc.save(`${account.name.replace(/\s+/g, '_')}_Backup.pdf`);
+        downloadFile(doc, `${account.name.replace(/\s+/g, '_')}_Backup.pdf`);
         addToast(`Data saved online. PDF backup sent to ${account.email}`, 'success');
       } catch (error) {
         console.error('Online Save Error:', error);
@@ -137,6 +165,7 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.15 }}
       className="pb-32 px-6 pt-12 space-y-6 max-w-xl mx-auto"
     >
       <div className="flex justify-between items-center mb-6">

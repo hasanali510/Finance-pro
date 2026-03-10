@@ -45,7 +45,7 @@ export function PinLock({ correctPin, onUnlock, settings }: PinLockProps) {
     <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-[#0F172A] flex flex-col items-center justify-center px-6 transition-colors duration-300">
       <motion.div
         animate={error ? { x: [-10, 10, -10, 10, 0] } : {}}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.15 }}
         className="flex flex-col items-center"
       >
         <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mb-8">

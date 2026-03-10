@@ -106,6 +106,7 @@ export function Analytics({ transactions, categories, settings }: AnalyticsProps
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.15 }}
       className="pb-32 px-6 pt-12 space-y-8 max-w-xl mx-auto"
     >
       <div className="flex justify-between items-center mb-6">

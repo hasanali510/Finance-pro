@@ -114,7 +114,7 @@ export const translations = {
       saveCategory: 'Save Category'
     },
     onboarding: {
-      welcomeTitle: 'Welcome to FinancePro',
+      welcomeTitle: 'Welcome to Hisab Pro',
       welcomeDesc: 'Your premium personal finance manager.',
       trackTitle: 'Track Every Penny',
       trackDesc: 'Log your income and expenses with ease and see where your money goes.',
@@ -256,7 +256,7 @@ export const translations = {
       saveCategory: 'ক্যাটাগরি সেভ করুন'
     },
     onboarding: {
-      welcomeTitle: 'FinancePro তে স্বাগতম',
+      welcomeTitle: 'Hisab Pro তে স্বাগতম',
       welcomeDesc: 'আপনার প্রিমিয়াম ব্যক্তিগত ফিন্যান্স ম্যানেজার।',
       trackTitle: 'প্রতিটি পয়সার হিসাব রাখুন',
       trackDesc: 'সহজেই আপনার আয় এবং ব্যয় লগ করুন এবং দেখুন আপনার টাকা কোথায় যায়।',

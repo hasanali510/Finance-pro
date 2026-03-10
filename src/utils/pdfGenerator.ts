@@ -58,7 +58,7 @@ export const generatePDFReport = async ({
   // 3. Add Header & Company Info
   doc.setFontSize(22);
   doc.setTextColor(16, 185, 129); // Emerald 500
-  doc.text('Smart Income', 14, 20);
+  doc.text('Hisab Pro', 14, 20);
   
   doc.setFontSize(10);
   doc.setTextColor(100, 116, 139); // Slate 500
@@ -171,5 +171,25 @@ export const generatePDFReport = async ({
   });
 
   // 7. Save PDF
-  doc.save(`Smart_Income_Report_${format(now, 'yyyy-MM-dd')}.pdf`);
+  const filename = `Hisab_Pro_Report_${format(now, 'yyyy-MM-dd')}.pdf`;
+  try {
+    const isLocalMobile = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
+                          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isLocalMobile) {
+      const dataUri = doc.output('datauristring');
+      const win = window.open();
+      if (win) {
+        win.document.write('<iframe src="' + dataUri + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+        win.document.title = filename;
+      } else {
+        doc.save(filename);
+      }
+    } else {
+      doc.save(filename);
+    }
+  } catch (error) {
+    console.error("Download error:", error);
+    doc.save(filename);
+  }
 };

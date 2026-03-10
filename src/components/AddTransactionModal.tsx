@@ -18,7 +18,7 @@ export function AddTransactionModal({ isOpen, onClose, onSave, categories, setti
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [paymentMethod, setPaymentMethod] = useState('');
   const [note, setNote] = useState('');
 
@@ -28,7 +28,7 @@ export function AddTransactionModal({ isOpen, onClose, onSave, categories, setti
     if (isOpen) {
       setAmount('');
       setType('expense');
-      setDate(format(new Date(), 'yyyy-MM-dd'));
+      setDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
       setPaymentMethod(PAYMENT_METHODS[0]?.id || '');
       setNote('');
     }
@@ -98,7 +98,7 @@ export function AddTransactionModal({ isOpen, onClose, onSave, categories, setti
                     ? 'linear-gradient(to right, #F43F5E, #F97316)' 
                     : 'linear-gradient(to right, #10B981, #2DD4BF)'
                 }}
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.15 }}
               />
               <button
                 onClick={() => setType('expense')}
@@ -148,7 +148,7 @@ export function AddTransactionModal({ isOpen, onClose, onSave, categories, setti
                     <button
                       key={cat.id}
                       onClick={() => setCategoryId(cat.id)}
-                      className={`px-4 py-2.5 rounded-2xl text-sm font-medium transition-all duration-300 border ${
+                      className={`px-4 py-2.5 rounded-2xl text-sm font-medium transition-all duration-150 border ${
                         categoryId === cat.id
                           ? 'bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/20 text-slate-900 dark:text-white shadow-sm dark:shadow-[0_0_15px_rgba(255,255,255,0.1)]'
                           : 'bg-transparent border-black/5 dark:border-white/5 text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5'
@@ -171,7 +171,7 @@ export function AddTransactionModal({ isOpen, onClose, onSave, categories, setti
                     <Calendar size={16} /> {t.date}
                   </label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     className="w-full bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:border-emerald-500/50 transition-colors shadow-sm dark:shadow-none"

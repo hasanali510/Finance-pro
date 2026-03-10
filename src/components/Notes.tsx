@@ -82,13 +82,13 @@ function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: strin
             <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => setIsEditing(true)}
-                className="p-2 text-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg transition-all duration-200 active:scale-95"
+                className="p-2 text-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg transition-all duration-150 active:scale-95"
               >
                 <Edit2 size={16} />
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-lg transition-all duration-200 active:scale-95"
+                className="p-2 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-lg transition-all duration-150 active:scale-95"
               >
                 <Trash2 size={16} />
               </button>
@@ -125,6 +125,7 @@ export function Notes({ notes, onAdd, onDelete, onEdit, settings }: NotesProps) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.15 }}
       className="pb-32 px-6 pt-12 space-y-6 max-w-xl mx-auto"
     >
       <div className="flex justify-between items-center mb-6">

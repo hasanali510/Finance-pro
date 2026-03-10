@@ -64,6 +64,7 @@ export function Profile({ account, onUpdateAccount, onBack, addToast, settings }
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.15 }}
       className="pb-32 px-6 pt-12 space-y-6 max-w-xl mx-auto"
     >
       <div className="flex items-center gap-4 mb-8">

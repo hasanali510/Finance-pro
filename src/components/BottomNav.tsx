@@ -49,7 +49,7 @@ export function BottomNav({ currentView, onChangeView, onAddClick, settings }: B
             >
               <Icon
                 size={22}
-                className={`transition-colors duration-300 ${
+                className={`transition-colors duration-150 ${
                   isActive ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'
                 }`}
                 strokeWidth={isActive ? 2.5 : 2}
