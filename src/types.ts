@@ -23,8 +23,12 @@ export type Transaction = {
 
 export type Note = {
   id: string;
+  title?: string;
   text: string;
+  color?: string;
+  isPinned?: boolean;
   createdAt: number;
+  updatedAt?: number;
 };
 
 export type UserSettings = {
@@ -49,7 +53,7 @@ export type Account = {
   profileImage?: string;
 };
 
-export type ViewState = 'dashboard' | 'analytics' | 'history' | 'categories' | 'settings' | 'profile' | 'notes';
+export type ViewState = 'dashboard' | 'analytics' | 'history' | 'reports' | 'categories' | 'settings' | 'profile' | 'notes';
 
 declare global {
   interface Window {

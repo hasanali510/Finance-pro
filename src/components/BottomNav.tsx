@@ -1,4 +1,4 @@
-import { Home, PieChart, List, Settings as SettingsIcon, Plus } from 'lucide-react';
+import { Home, PieChart, Settings as SettingsIcon, Plus, FileText } from 'lucide-react';
 import { ViewState, UserSettings } from '../types';
 import { motion } from 'framer-motion';
 import { translations } from '../i18n';
@@ -15,9 +15,9 @@ export function BottomNav({ currentView, onChangeView, onAddClick, settings }: B
 
   const navItems = [
     { id: 'dashboard', icon: Home, label: t.home },
-    { id: 'analytics', icon: PieChart, label: t.analytics },
+    { id: 'reports', icon: PieChart, label: 'Reports' },
     { id: 'add', icon: Plus, label: t.add, isAction: true },
-    { id: 'history', icon: List, label: t.history },
+    { id: 'notes', icon: FileText, label: 'Notes' },
     { id: 'settings', icon: SettingsIcon, label: t.settings },
   ];
 

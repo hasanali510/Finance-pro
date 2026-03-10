@@ -9,6 +9,7 @@ import { BottomNav } from './components/BottomNav';
 import { Dashboard } from './components/Dashboard';
 import { Analytics } from './components/Analytics';
 import { History } from './components/History';
+import { Reports } from './components/Reports';
 import { Categories } from './components/Categories';
 import { Settings } from './components/Settings';
 import { AddTransactionModal } from './components/AddTransactionModal';
@@ -102,18 +103,19 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount, onUpdateAccount }:
     addToast('Transaction deleted', 'info');
   }, [setTransactions, addToast]);
 
-  const handleAddNote = useCallback((text: string) => {
+  const handleAddNote = useCallback((noteData: Omit<Note, 'id' | 'createdAt'>) => {
     const note: Note = {
       id: uuidv4(),
-      text,
+      ...noteData,
       createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
     setNotes((prev) => [...prev, note]);
     addToast('Note added', 'success');
   }, [setNotes, addToast]);
 
-  const handleEditNote = useCallback((id: string, text: string) => {
-    setNotes((prev) => prev.map((n) => n.id === id ? { ...n, text } : n));
+  const handleEditNote = useCallback((id: string, noteData: Partial<Note>) => {
+    setNotes((prev) => prev.map((n) => n.id === id ? { ...n, ...noteData, updatedAt: Date.now() } : n));
     addToast('Note updated', 'success');
   }, [setNotes, addToast]);
 
@@ -170,28 +172,19 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount, onUpdateAccount }:
               transactions={transactions}
               categories={categories}
               settings={settings}
-              onViewAll={() => setView('history')}
+              onViewAll={() => setView('reports')}
               onProfileClick={() => setView('profile')}
               onViewNotes={() => setView('notes')}
             />
           </motion.div>
         )}
-        {view === 'analytics' && (
-          <motion.div key="analytics" className="w-full h-full">
-            <Analytics
+        {view === 'reports' && (
+          <motion.div key="reports" className="w-full h-full">
+            <Reports
               transactions={transactions}
               categories={categories}
               settings={settings}
-            />
-          </motion.div>
-        )}
-        {view === 'history' && (
-          <motion.div key="history" className="w-full h-full">
-            <History
-              transactions={transactions}
-              categories={categories}
-              onDelete={handleDeleteTransaction}
-              settings={settings}
+              onDeleteTransaction={handleDeleteTransaction}
             />
           </motion.div>
         )}

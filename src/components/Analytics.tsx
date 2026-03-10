@@ -11,9 +11,10 @@ interface AnalyticsProps {
   transactions: Transaction[];
   categories: Category[];
   settings: UserSettings;
+  hideHeader?: boolean;
 }
 
-export function Analytics({ transactions, categories, settings }: AnalyticsProps) {
+export function Analytics({ transactions, categories, settings, hideHeader }: AnalyticsProps) {
   const t = translations[settings.language || 'en'].analytics;
   const tDash = translations[settings.language || 'en'].dashboard;
   const expenseTransactions = useMemo(() => transactions.filter(t => t.type === 'expense'), [transactions]);
@@ -107,57 +108,59 @@ export function Analytics({ transactions, categories, settings }: AnalyticsProps
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.15 }}
-      className="pb-32 px-6 pt-12 space-y-8 max-w-xl mx-auto"
+      className={`${hideHeader ? 'pb-32 pt-4' : 'pb-32 px-6 pt-12'} space-y-8 max-w-xl mx-auto`}
     >
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{t.title}</h1>
-        <div className="relative">
-          <button 
-            onClick={() => setIsReportMenuOpen(!isReportMenuOpen)}
-            disabled={isGeneratingReport || transactions.length === 0}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center border border-black/5 dark:border-white/10 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
-          >
-            {isGeneratingReport ? (
-              <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Download className="text-emerald-500 dark:text-emerald-400" size={20} />
-            )}
-          </button>
+      {!hideHeader && (
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{t.title}</h1>
+          <div className="relative">
+            <button 
+              onClick={() => setIsReportMenuOpen(!isReportMenuOpen)}
+              disabled={isGeneratingReport || transactions.length === 0}
+              className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center border border-black/5 dark:border-white/10 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+            >
+              {isGeneratingReport ? (
+                <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Download className="text-emerald-500 dark:text-emerald-400" size={20} />
+              )}
+            </button>
 
-          <AnimatePresence>
-            {isReportMenuOpen && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsReportMenuOpen(false)}
-                />
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="absolute right-0 top-12 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-black/5 dark:border-white/10 z-50 overflow-hidden"
-                >
-                  <div className="p-2 space-y-1">
-                    <div className="px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Export PDF Report
+            <AnimatePresence>
+              {isReportMenuOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsReportMenuOpen(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="absolute right-0 top-12 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-black/5 dark:border-white/10 z-50 overflow-hidden"
+                  >
+                    <div className="p-2 space-y-1">
+                      <div className="px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Export PDF Report
+                      </div>
+                      {(['weekly', 'monthly', 'yearly', 'total'] as ReportPeriod[]).map((period) => (
+                        <button
+                          key={period}
+                          onClick={() => handleGenerateReport(period)}
+                          className="w-full text-left px-3 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors flex items-center gap-2 capitalize"
+                        >
+                          <FileText size={16} className="text-emerald-500" />
+                          {period} Report
+                        </button>
+                      ))}
                     </div>
-                    {(['weekly', 'monthly', 'yearly', 'total'] as ReportPeriod[]).map((period) => (
-                      <button
-                        key={period}
-                        onClick={() => handleGenerateReport(period)}
-                        className="w-full text-left px-3 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors flex items-center gap-2 capitalize"
-                      >
-                        <FileText size={16} className="text-emerald-500" />
-                        {period} Report
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Smart Insights */}
       {insights.length > 0 && (

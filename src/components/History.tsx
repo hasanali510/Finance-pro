@@ -10,11 +10,12 @@ interface HistoryProps {
   categories: Category[];
   onDelete: (id: string) => void;
   settings: UserSettings;
+  hideHeader?: boolean;
 }
 
 type FilterType = 'all' | 'today' | 'week' | 'month';
 
-export function History({ transactions, categories, onDelete, settings }: HistoryProps) {
+export function History({ transactions, categories, onDelete, settings, hideHeader }: HistoryProps) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -60,14 +61,16 @@ export function History({ transactions, categories, onDelete, settings }: Histor
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.15 }}
-      className="pb-32 px-6 pt-12 space-y-6 max-w-xl mx-auto"
+      className={`${hideHeader ? 'pb-32 pt-4' : 'pb-32 px-6 pt-12'} space-y-6 max-w-xl mx-auto`}
     >
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{t.title}</h1>
-        <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center border border-black/5 dark:border-white/10 shadow-sm">
-          <Filter className="text-blue-500 dark:text-blue-400" size={20} />
+      {!hideHeader && (
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{t.title}</h1>
+          <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center border border-black/5 dark:border-white/10 shadow-sm">
+            <Filter className="text-blue-500 dark:text-blue-400" size={20} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Search Bar */}
       <div className="relative">
