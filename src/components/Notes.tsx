@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, StickyNote, ChevronDown, ChevronUp, Edit2, Pin, Palette } from 'lucide-react';
+import { Plus, Trash2, NotebookPen, ChevronDown, ChevronUp, Edit2, Pin, Palette } from 'lucide-react';
 import { Note } from '../types';
 import { translations } from '../i18n';
 import { format } from 'date-fns';
@@ -15,13 +15,13 @@ interface NotesProps {
 
 const NOTE_COLORS = [
   'bg-white dark:bg-slate-800', // Default
-  'bg-red-100 dark:bg-red-900/30',
-  'bg-orange-100 dark:bg-orange-900/30',
-  'bg-yellow-100 dark:bg-yellow-900/30',
-  'bg-green-100 dark:bg-green-900/30',
-  'bg-blue-100 dark:bg-blue-900/30',
-  'bg-purple-100 dark:bg-purple-900/30',
-  'bg-pink-100 dark:bg-pink-900/30',
+  'bg-red-100 dark:bg-red-500/20',
+  'bg-orange-100 dark:bg-orange-500/20',
+  'bg-yellow-100 dark:bg-yellow-500/20',
+  'bg-green-100 dark:bg-green-500/20',
+  'bg-blue-100 dark:bg-blue-500/20',
+  'bg-purple-100 dark:bg-purple-500/20',
+  'bg-pink-100 dark:bg-pink-500/20',
 ];
 
 function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: string) => void; onEdit?: (id: string, noteData: Partial<Note>) => void }) {
@@ -139,7 +139,7 @@ function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: strin
                 {note.text}
               </p>
             </div>
-            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 shrink-0 transition-opacity">
               <button
                 onClick={togglePin}
                 className={`p-2 rounded-lg transition-all duration-150 active:scale-95 ${note.isPinned ? 'text-amber-500 bg-amber-100 dark:bg-amber-900/30' : 'text-slate-400 hover:bg-black/5 dark:hover:bg-white/10'}`}
@@ -217,7 +217,7 @@ export function Notes({ notes, onAdd, onDelete, onEdit, settings }: NotesProps) 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{t.title}</h1>
         <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center border border-black/5 dark:border-white/10">
-          <StickyNote className="text-slate-500 dark:text-slate-400" size={20} />
+          <NotebookPen className="text-slate-500 dark:text-slate-400" size={20} />
         </div>
       </div>
 
@@ -300,7 +300,7 @@ export function Notes({ notes, onAdd, onDelete, onEdit, settings }: NotesProps) 
               exit={{ opacity: 0 }}
               className="glass-card p-12 text-center text-slate-500 flex flex-col items-center justify-center mt-8"
             >
-              <StickyNote size={48} className="mb-4 text-slate-400 dark:text-slate-600 opacity-50" />
+              <NotebookPen size={48} className="mb-4 text-slate-400 dark:text-slate-600 opacity-50" />
               <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No notes yet</p>
               <p className="text-xs text-slate-500 mt-1">Add your first note above</p>
             </motion.div>

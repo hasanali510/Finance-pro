@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Transaction, Category, UserSettings, Account } from '../types';
 import { format, isThisMonth, isToday, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, ArrowDownRight, ArrowRight, Target, AlertCircle, Wallet, StickyNote, FileText } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, ArrowRight, Target, AlertCircle, Wallet, NotebookPen, FileText } from 'lucide-react';
 import { THEME_COLORS } from './AccountSelector';
 import { translations } from '../i18n';
 
@@ -142,7 +142,7 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
             onClick={onViewNotes}
             className="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-sm transition-transform active:scale-95"
           >
-            <StickyNote size={18} />
+            <NotebookPen size={18} />
           </button>
           <button 
             onClick={onProfileClick}
