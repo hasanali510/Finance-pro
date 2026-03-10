@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Transaction, Category, UserSettings, Account } from '../types';
 import { format, isThisMonth, isToday, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -75,6 +75,22 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
   const theme = THEME_COLORS.find(t => t.id === account.themeColor) || THEME_COLORS[0];
   const t = translations[settings.language || 'en'].dashboard;
 
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (isFlipped) {
+      // If flipped to cover, wait 3 seconds then flip back to balance
+      timeout = setTimeout(() => setIsFlipped(false), 3000);
+    } else {
+      // If showing balance, wait 4 seconds then flip to cover
+      timeout = setTimeout(() => setIsFlipped(true), 4000);
+    }
+    return () => clearTimeout(timeout);
+  }, [isFlipped]);
+
+  const isProfileComplete = account.name && account.email && account.mobile && account.profession;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -114,49 +130,117 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
         </div>
       </div>
 
-      {/* Header - Balance Card */}
-      <div className="relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 shadow-xl shadow-indigo-500/20 border border-black/5 dark:border-white/10">
-        {/* Decorative background elements */}
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/20 dark:bg-white/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-black/10 dark:bg-black/20 rounded-full blur-xl pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-b from-transparent to-black/5 dark:to-black/10 pointer-events-none" />
-
-        <div className="relative z-10">
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-white/80 text-xs font-medium tracking-wider uppercase">{t.totalBalance}</p>
-            <div className="bg-white/20 dark:bg-white/10 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 dark:border-white/10 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[9px] font-bold text-white uppercase tracking-wider">{t.active}</span>
+      {/* Profile Completion Prompt */}
+      {!isProfileComplete && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-2xl p-4 flex items-center justify-between shadow-sm"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/50 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Complete Profile</p>
+              <p className="text-xs text-amber-700 dark:text-amber-300">Unlock all features</p>
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight mb-8">
-            {formatCurrency(stats.balance)}
-          </h1>
-          
-          <div className="grid grid-cols-2 gap-3">
-            {/* Income */}
-            <div className="bg-white/20 dark:bg-white/10 rounded-2xl p-3 flex items-center gap-3 backdrop-blur-md border border-white/20 dark:border-white/10">
-              <div className="w-8 h-8 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0">
-                <ArrowDownRight size={16} className="text-emerald-300" />
-              </div>
-              <div className="overflow-hidden">
-                <p className="text-[10px] text-white/70 uppercase tracking-wider font-medium mb-0.5">{t.income}</p>
-                <p className="text-sm font-bold text-white truncate">{formatCurrency(stats.monthIncome)}</p>
-              </div>
-            </div>
+          <button 
+            onClick={onProfileClick}
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+          >
+            Complete Now
+          </button>
+        </motion.div>
+      )}
 
-            {/* Expense */}
-            <div className="bg-white/20 dark:bg-white/10 rounded-2xl p-3 flex items-center gap-3 backdrop-blur-md border border-white/20 dark:border-white/10">
-              <div className="w-8 h-8 rounded-full bg-rose-400/20 flex items-center justify-center shrink-0">
-                <ArrowUpRight size={16} className="text-rose-300" />
-              </div>
-              <div className="overflow-hidden">
-                <p className="text-[10px] text-white/70 uppercase tracking-wider font-medium mb-0.5">{t.expense}</p>
-                <p className="text-sm font-bold text-white truncate">{formatCurrency(stats.monthExpense)}</p>
+      {/* Header - Flippable Balance Card */}
+      <div 
+        className="relative w-full cursor-pointer h-[220px]" 
+        style={{ perspective: 1000 }}
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
+        <motion.div
+          className="w-full h-full relative"
+          animate={{ rotateY: isFlipped ? 180 : 0 }}
+          transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+          style={{ transformStyle: 'preserve-3d' }}
+        >
+          {/* Front: Balance Card */}
+          <div 
+            className="absolute top-0 left-0 w-full h-full"
+            style={{ backfaceVisibility: 'hidden' }}
+          >
+            <div className="w-full h-full relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 shadow-xl shadow-indigo-500/20 border border-black/5 dark:border-white/10">
+              {/* Decorative background elements */}
+              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/20 dark:bg-white/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-black/10 dark:bg-black/20 rounded-full blur-xl pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-b from-transparent to-black/5 dark:to-black/10 pointer-events-none" />
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-white/80 text-xs font-medium tracking-wider uppercase">{t.totalBalance}</p>
+                  <div className="bg-white/20 dark:bg-white/10 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 dark:border-white/10 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[9px] font-bold text-white uppercase tracking-wider">{t.active}</span>
+                  </div>
+                </div>
+                <h1 className="text-4xl font-bold text-white tracking-tight mb-8">
+                  {formatCurrency(stats.balance)}
+                </h1>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Income */}
+                  <div className="bg-white/20 dark:bg-white/10 rounded-2xl p-3 flex items-center gap-3 backdrop-blur-md border border-white/20 dark:border-white/10">
+                    <div className="w-8 h-8 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0">
+                      <ArrowDownRight size={16} className="text-emerald-300" />
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-[10px] text-white/70 uppercase tracking-wider font-medium mb-0.5">{t.income}</p>
+                      <p className="text-sm font-bold text-white truncate">{formatCurrency(stats.monthIncome)}</p>
+                    </div>
+                  </div>
+
+                  {/* Expense */}
+                  <div className="bg-white/20 dark:bg-white/10 rounded-2xl p-3 flex items-center gap-3 backdrop-blur-md border border-white/20 dark:border-white/10">
+                    <div className="w-8 h-8 rounded-full bg-rose-400/20 flex items-center justify-center shrink-0">
+                      <ArrowUpRight size={16} className="text-rose-300" />
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-[10px] text-white/70 uppercase tracking-wider font-medium mb-0.5">{t.expense}</p>
+                      <p className="text-sm font-bold text-white truncate">{formatCurrency(stats.monthExpense)}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+
+          {/* Back: Cover Photo / Features */}
+          <div 
+            className="absolute top-0 left-0 w-full h-full"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          >
+            <div className="w-full h-full relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-br from-emerald-500 to-teal-600 shadow-xl shadow-emerald-500/20 border border-black/5 dark:border-white/10 flex flex-col justify-center items-center text-center">
+              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-black/10 rounded-full blur-xl pointer-events-none" />
+              
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 border border-white/30">
+                <Wallet className="text-white" size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Hisab Pro</h2>
+              <p className="text-white/90 text-sm font-medium px-4">
+                Track expenses, manage budgets, and achieve financial goals effortlessly.
+              </p>
+              <div className="mt-6 flex gap-2">
+                <span className="w-2 h-2 rounded-full bg-white/50" />
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span className="w-2 h-2 rounded-full bg-white/50" />
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Goals & Budget Section */}
