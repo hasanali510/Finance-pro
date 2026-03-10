@@ -42,6 +42,20 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
     return { todayExpense, monthExpense, totalExpense, totalIncome, balance, monthSavings, monthIncome };
   }, [transactions]);
 
+  const categoryBudgets = useMemo(() => {
+    const expensesThisMonth = transactions.filter(t => t.type === 'expense' && isThisMonth(parseISO(t.date)));
+    const budgets = categories
+      .filter(c => c.type === 'expense' && c.budget && c.budget > 0)
+      .map(c => {
+        const spent = expensesThisMonth.filter(t => t.categoryId === c.id).reduce((sum, t) => sum + t.amount, 0);
+        const progress = Math.min((spent / (c.budget || 1)) * 100, 100);
+        const isOver = spent > (c.budget || 0);
+        return { ...c, spent, progress, isOver };
+      })
+      .sort((a, b) => b.progress - a.progress); // Sort by highest progress
+    return budgets;
+  }, [transactions, categories]);
+
   const topSpendingCategory = useMemo(() => {
     const map = new Map<string, number>();
     transactions.filter(t => t.type === 'expense' && isThisMonth(parseISO(t.date))).forEach((t) => {
@@ -62,7 +76,7 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
   }, [transactions]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: settings.currency || 'USD', maximumFractionDigits: 0 }).format(val);
 
   const isPositive = stats.balance >= 0;
   
@@ -321,6 +335,50 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
             </div>
           </div>
           <p className="text-lg font-bold text-slate-900 dark:text-white z-10">{formatCurrency(topSpendingCategory.amount)}</p>
+        </div>
+      )}
+
+      {/* Category Budgets */}
+      {categoryBudgets.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3 px-1">Category Budgets</h2>
+          <div className="space-y-3">
+            {categoryBudgets.slice(0, 3).map((cat) => (
+              <div key={cat.id} className="glass-card p-4 border border-black/5 dark:border-white/5">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{cat.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-sm font-bold ${cat.isOver ? 'text-rose-500 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
+                      {formatCurrency(cat.spent)}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400"> / {formatCurrency(cat.budget!)}</span>
+                  </div>
+                </div>
+                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800/50 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${cat.progress}%` }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className={`h-full rounded-full ${cat.isOver ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' : 'bg-blue-500'}`}
+                    style={!cat.isOver ? { backgroundColor: cat.color } : {}}
+                  />
+                </div>
+                {cat.isOver && (
+                  <p className="text-[10px] text-rose-500 mt-1.5 flex items-center gap-1 font-medium">
+                    <AlertCircle size={10} /> Budget exceeded by {formatCurrency(cat.spent - cat.budget!)}
+                  </p>
+                )}
+                {!cat.isOver && cat.progress >= 80 && (
+                  <p className="text-[10px] text-amber-500 mt-1.5 flex items-center gap-1 font-medium">
+                    <AlertCircle size={10} /> Nearing budget limit
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

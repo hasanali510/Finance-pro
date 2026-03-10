@@ -66,6 +66,58 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
     }
   };
 
+  const generateCSV = () => {
+    const headers = ["Date", "Type", "Category", "Amount", "Note"];
+    const rows = transactions.map(t => {
+      const cat = categories.find(c => c.id === t.categoryId)?.name || 'Unknown';
+      const formattedDate = new Date(t.date).toLocaleDateString();
+      return [
+        formattedDate,
+        t.type.toUpperCase(),
+        cat,
+        t.amount.toString(),
+        `"${(t.note || '').replace(/"/g, '""')}"`
+      ].join(',');
+    });
+
+    return [headers.join(','), ...rows].join('\n');
+  };
+
+  const downloadCSV = () => {
+    try {
+      const csvContent = generateCSV();
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const filename = `${account.name.replace(/\s+/g, '_')}_transactions.csv`;
+
+      // @ts-ignore
+      if (window.Android && window.Android.downloadBase64File) {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = function() {
+          const base64data = reader.result as string;
+          const base64Content = base64data.split(',')[1];
+          // @ts-ignore
+          window.Android.downloadBase64File(base64Content, filename, 'text/csv');
+        }
+      } else {
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+          const url = URL.createObjectURL(blob);
+          link.setAttribute("href", url);
+          link.setAttribute("download", filename);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+      addToast('CSV downloaded successfully', 'success');
+    } catch (error) {
+      console.error('Error generating CSV:', error);
+      addToast('Failed to generate CSV', 'error');
+    }
+  };
+
   const generatePDF = () => {
     const doc = new jsPDF();
     
@@ -198,7 +250,7 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
           </button>
         </div>
 
-        {/* Language & Theme */}
+        {/* Language, Theme & Currency */}
         <div className="space-y-3">
           <button
             onClick={() => onUpdateSettings({ ...settings, language: settings.language === 'en' ? 'bn' : 'en' })}
@@ -212,6 +264,26 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
             </div>
             <ChevronRight size={16} className="text-slate-400" />
           </button>
+
+          <div className="glass-card p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <DollarSign className="text-emerald-500 dark:text-emerald-400" size={20} />
+              <span className="text-sm font-medium text-slate-900 dark:text-white">
+                {settings.language === 'en' ? 'Currency' : 'মুদ্রা'}
+              </span>
+            </div>
+            <select
+              value={settings.currency || 'USD'}
+              onChange={(e) => onUpdateSettings({ ...settings, currency: e.target.value })}
+              className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/50"
+            >
+              <option value="USD">USD ($)</option>
+              <option value="BDT">BDT (৳)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="INR">INR (₹)</option>
+            </select>
+          </div>
           
           <div className="glass-card p-1 flex items-center justify-between gap-1">
             <button
@@ -403,21 +475,31 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
         </button>
 
         {/* Export Data */}
-        <button
-          onClick={handleExportPDF}
-          className="w-full glass-card p-4 flex items-center justify-between group hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
+        <div className="glass-card p-4 space-y-3">
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shrink-0">
               <Download className="text-orange-500 dark:text-orange-400" size={16} />
             </div>
             <div className="text-left">
               <h2 className="text-slate-900 dark:text-white font-medium text-sm">{t.exportData}</h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">{t.downloadPdf}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Download your transactions</p>
             </div>
           </div>
-          <ChevronRight className="text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" size={18} />
-        </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportPDF}
+              className="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-900 dark:text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-black/5 dark:border-white/10"
+            >
+              <Download size={16} /> PDF
+            </button>
+            <button
+              onClick={downloadCSV}
+              className="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-900 dark:text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-black/5 dark:border-white/10"
+            >
+              <Download size={16} /> CSV
+            </button>
+          </div>
+        </div>
 
         {/* Danger Zone */}
         <div className="pt-4">

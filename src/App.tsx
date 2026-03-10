@@ -133,6 +133,11 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount, onUpdateAccount }:
     addToast('Category added', 'success');
   }, [setCategories, addToast]);
 
+  const handleEditCategory = useCallback((id: string, updates: Partial<Category>) => {
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+    addToast('Category updated', 'success');
+  }, [setCategories, addToast]);
+
   const handleDeleteCategory = useCallback((id: string) => {
     const isUsed = transactions.some(t => t.categoryId === id);
     if (isUsed) {
@@ -194,6 +199,7 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount, onUpdateAccount }:
               categories={categories}
               onAdd={handleAddCategory}
               onDelete={handleDeleteCategory}
+              onEdit={handleEditCategory}
               onBack={() => setView('settings')}
               settings={settings}
             />

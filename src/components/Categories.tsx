@@ -8,6 +8,7 @@ interface CategoriesProps {
   categories: Category[];
   onAdd: (category: Omit<Category, 'id'>) => void;
   onDelete: (id: string) => void;
+  onEdit?: (id: string, updates: Partial<Category>) => void;
   onBack: () => void;
   settings: UserSettings;
 }
@@ -17,11 +18,12 @@ const COLORS = [
   '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#64748B'
 ];
 
-export function Categories({ categories, onAdd, onDelete, onBack, settings }: CategoriesProps) {
+export function Categories({ categories, onAdd, onDelete, onEdit, onBack, settings }: CategoriesProps) {
   const [activeTab, setActiveTab] = useState<TransactionType>('expense');
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLORS[0]);
+  const [newBudget, setNewBudget] = useState('');
 
   const filteredCategories = categories.filter(c => c.type === activeTab);
 
@@ -30,8 +32,15 @@ export function Categories({ categories, onAdd, onDelete, onBack, settings }: Ca
 
   const handleAdd = () => {
     if (!newName.trim()) return;
-    onAdd({ name: newName.trim(), color: newColor, icon: 'tag', type: activeTab });
+    onAdd({ 
+      name: newName.trim(), 
+      color: newColor, 
+      icon: 'tag', 
+      type: activeTab,
+      ...(activeTab === 'expense' && newBudget ? { budget: Number(newBudget) } : {})
+    });
     setNewName('');
+    setNewBudget('');
     setIsAdding(false);
   };
 
@@ -120,6 +129,16 @@ export function Categories({ categories, onAdd, onDelete, onBack, settings }: Ca
                 autoFocus
               />
               
+              {activeTab === 'expense' && (
+                <input
+                  type="number"
+                  placeholder="Monthly Budget (Optional)"
+                  value={newBudget}
+                  onChange={(e) => setNewBudget(e.target.value)}
+                  className="w-full bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:border-rose-500/50 transition-colors shadow-sm dark:shadow-none"
+                />
+              )}
+              
               <div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{t.color}</p>
                 <div className="flex flex-wrap gap-2">
@@ -155,23 +174,47 @@ export function Categories({ categories, onAdd, onDelete, onBack, settings }: Ca
           <motion.div
             layout
             key={cat.id}
-            className="glass-card p-4 flex items-center justify-between group"
+            className="glass-card p-4 flex flex-col gap-3 group"
           >
-            <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner"
-                style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
-              >
-                <Tags size={20} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner"
+                  style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                >
+                  <Tags size={20} />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-white text-lg">{cat.name}</p>
+                  {cat.type === 'expense' && cat.budget && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Budget: {new Intl.NumberFormat('en-US', { style: 'currency', currency: settings.currency || 'USD', maximumFractionDigits: 0 }).format(cat.budget)}
+                    </p>
+                  )}
+                </div>
               </div>
-              <p className="font-semibold text-slate-900 dark:text-white text-lg">{cat.name}</p>
+              <div className="flex items-center gap-2">
+                {cat.type === 'expense' && onEdit && (
+                  <button
+                    onClick={() => {
+                      const newBudget = prompt(`Set monthly budget for ${cat.name} (leave empty to remove):`, cat.budget?.toString() || '');
+                      if (newBudget !== null) {
+                        onEdit(cat.id, { budget: newBudget ? Number(newBudget) : undefined });
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  >
+                    Set Budget
+                  </button>
+                )}
+                <button
+                  onClick={() => onDelete(cat.id)}
+                  className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 dark:hover:bg-red-500/20"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => onDelete(cat.id)}
-              className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 dark:hover:bg-red-500/20"
-            >
-              <Trash2 size={18} />
-            </button>
           </motion.div>
         ))}
       </div>

@@ -50,7 +50,7 @@ export function Analytics({ transactions, categories, settings, hideHeader }: An
   const averageDailyExpense = totalExpense / (monthlyData.length * 30 || 1);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: settings.currency || 'USD', maximumFractionDigits: 0 }).format(val);
 
   // Simple Insights
   const insights = useMemo(() => {

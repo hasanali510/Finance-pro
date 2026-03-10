@@ -6,6 +6,7 @@ export type Category = {
   color: string;
   icon: string;
   type: TransactionType;
+  budget?: number; // Optional monthly budget limit
 };
 
 export type Transaction = {

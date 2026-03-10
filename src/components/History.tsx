@@ -51,7 +51,7 @@ export function History({ transactions, categories, onDelete, settings, hideHead
   }, [filteredTransactions]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(val);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: settings.currency || 'USD', maximumFractionDigits: 2 }).format(val);
 
   const t = translations[settings.language || 'en'].history;
 
