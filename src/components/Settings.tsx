@@ -89,32 +89,41 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const filename = `${account.name.replace(/\s+/g, '_')}_transactions.csv`;
 
-      // @ts-ignore
-      if (window.Android && window.Android.downloadFile) {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = function() {
-          const base64data = reader.result as string;
-          const base64Content = base64data.split(',')[1];
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+
+      reader.onloadend = function() {
+
+        const base64data = reader.result as string;
+        const base64 = base64data.split(',')[1];
+
+        // @ts-ignore
+        if (window.Android) {
           // @ts-ignore
-          window.Android.downloadFile(base64Content, filename, 'text/csv');
-        }
-      } else {
-        const link = document.createElement("a");
-        if (link.download !== undefined) {
+          window.Android.downloadBase64(base64, filename, "text/csv");
+        } else {
+
+          const link = document.createElement("a");
           const url = URL.createObjectURL(blob);
-          link.setAttribute("href", url);
-          link.setAttribute("download", filename);
-          link.style.visibility = 'hidden';
+
+          link.href = url;
+          link.download = filename;
+
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
+
         }
-      }
+
+      };
+
       addToast('CSV downloaded successfully', 'success');
+
     } catch (error) {
+
       console.error('Error generating CSV:', error);
       addToast('Failed to generate CSV', 'error');
+
     }
   };
 
@@ -149,36 +158,17 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
 
   const downloadFile = (doc: jsPDF, filename: string) => {
     try {
-      // Check if running inside the Android WebView app
-      if (window.Android && window.Android.downloadFile) {
-        // Get base64 string without the data URI prefix
-        const base64String = doc.output('datauristring').split(',')[1];
-        window.Android.downloadFile(base64String, filename, 'application/pdf');
-        return;
-      }
+      const base64 = doc.output("datauristring").split(",")[1];
 
-      // Check if running locally on mobile where downloads might be blocked
-      const isLocalMobile = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
-                            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      if (isLocalMobile) {
-        // Fallback for local mobile: open PDF in new tab/window as data URI
-        const dataUri = doc.output('datauristring');
-        const win = window.open();
-        if (win) {
-          win.document.write('<iframe src="' + dataUri + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
-          win.document.title = filename;
-        } else {
-          // If popup blocked, try standard save
-          doc.save(filename);
-        }
+      // @ts-ignore
+      if (window.Android) {
+        // @ts-ignore
+        window.Android.downloadBase64(base64, filename, "application/pdf");
       } else {
-        // Standard save for web
         doc.save(filename);
       }
     } catch (error) {
       console.error("Download error:", error);
-      // Last resort
       doc.save(filename);
     }
   };
