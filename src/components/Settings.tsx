@@ -90,14 +90,14 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
       const filename = `${account.name.replace(/\s+/g, '_')}_transactions.csv`;
 
       // @ts-ignore
-      if (window.Android && window.Android.downloadBase64File) {
+      if (window.Android && window.Android.downloadFile) {
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = function() {
           const base64data = reader.result as string;
           const base64Content = base64data.split(',')[1];
           // @ts-ignore
-          window.Android.downloadBase64File(base64Content, filename, 'text/csv');
+          window.Android.downloadFile(base64Content, filename, 'text/csv');
         }
       } else {
         const link = document.createElement("a");
