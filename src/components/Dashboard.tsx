@@ -76,7 +76,7 @@ export function Dashboard({ account, transactions, categories, settings, onViewA
   }, [transactions]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: settings.currency || 'USD', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: settings.currency || 'USD', maximumFractionDigits: 0, currencyDisplay: 'narrowSymbol' }).format(val);
 
   const isPositive = stats.balance >= 0;
   

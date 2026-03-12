@@ -48,7 +48,8 @@ export const generatePDFReport = async ({
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat(settings.language === 'bn' ? 'bn-BD' : 'en-US', { 
       style: 'currency', 
-      currency: settings.currency || 'USD' 
+      currency: settings.currency || 'USD',
+      currencyDisplay: 'narrowSymbol'
     }).format(val);
 
   // 2. Initialize PDF

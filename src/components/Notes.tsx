@@ -15,13 +15,13 @@ interface NotesProps {
 
 const NOTE_THEMES = [
   { id: 'default', bg: 'bg-white dark:bg-slate-800', border: 'border-slate-200 dark:border-slate-700', picker: 'bg-slate-200 dark:bg-slate-600' },
-  { id: 'red', bg: 'bg-red-50 dark:bg-red-950/30', border: 'border-red-200 dark:border-red-900/50', picker: 'bg-red-400 dark:bg-red-500' },
-  { id: 'orange', bg: 'bg-orange-50 dark:bg-orange-950/30', border: 'border-orange-200 dark:border-orange-900/50', picker: 'bg-orange-400 dark:bg-orange-500' },
-  { id: 'yellow', bg: 'bg-yellow-50 dark:bg-yellow-950/30', border: 'border-yellow-200 dark:border-yellow-900/50', picker: 'bg-yellow-400 dark:bg-yellow-500' },
-  { id: 'green', bg: 'bg-green-50 dark:bg-green-950/30', border: 'border-green-200 dark:border-green-900/50', picker: 'bg-green-400 dark:bg-green-500' },
-  { id: 'blue', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-900/50', picker: 'bg-blue-400 dark:bg-blue-500' },
-  { id: 'purple', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-900/50', picker: 'bg-purple-400 dark:bg-purple-500' },
-  { id: 'pink', bg: 'bg-pink-50 dark:bg-pink-950/30', border: 'border-pink-200 dark:border-pink-900/50', picker: 'bg-pink-400 dark:bg-pink-500' },
+  { id: 'red', bg: 'bg-red-50 dark:bg-red-900', border: 'border-red-200 dark:border-red-800', picker: 'bg-red-400 dark:bg-red-500' },
+  { id: 'orange', bg: 'bg-orange-50 dark:bg-orange-900', border: 'border-orange-200 dark:border-orange-800', picker: 'bg-orange-400 dark:bg-orange-500' },
+  { id: 'yellow', bg: 'bg-yellow-50 dark:bg-yellow-900', border: 'border-yellow-200 dark:border-yellow-800', picker: 'bg-yellow-400 dark:bg-yellow-500' },
+  { id: 'green', bg: 'bg-green-50 dark:bg-green-900', border: 'border-green-200 dark:border-green-800', picker: 'bg-green-400 dark:bg-green-500' },
+  { id: 'blue', bg: 'bg-blue-50 dark:bg-blue-900', border: 'border-blue-200 dark:border-blue-800', picker: 'bg-blue-400 dark:bg-blue-500' },
+  { id: 'purple', bg: 'bg-purple-50 dark:bg-purple-900', border: 'border-purple-200 dark:border-purple-800', picker: 'bg-purple-400 dark:bg-purple-500' },
+  { id: 'pink', bg: 'bg-pink-50 dark:bg-pink-900', border: 'border-pink-200 dark:border-pink-800', picker: 'bg-pink-400 dark:bg-pink-500' },
 ];
 
 const getTheme = (colorIdOrClass: string | undefined) => {
@@ -41,7 +41,7 @@ const getTheme = (colorIdOrClass: string | undefined) => {
 };
 
 function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: string) => void; onEdit?: (id: string, noteData: Partial<Note>) => void }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(note.title || '');
   const [editValue, setEditValue] = useState(note.text);
@@ -100,10 +100,10 @@ function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: strin
     onEdit(note.id, { text: lines.join('\n') });
   };
 
-  const renderNoteText = (text: string) => {
+  const renderNoteText = (text: string, isModal: boolean = false) => {
     const lines = text.split('\n');
-    const displayLines = isExpanded ? lines : lines.slice(0, 5);
-    const hasMore = lines.length > 5 || (!isExpanded && text.length > 150);
+    const displayLines = isModal ? lines : lines.slice(0, 5);
+    const hasMore = lines.length > 5 || (!isModal && text.length > 150);
     
     return (
       <div className="space-y-1">
@@ -132,12 +132,12 @@ function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: strin
             );
           }
           return (
-            <p key={index} className="text-sm text-slate-600 dark:text-slate-300 min-h-[1.25rem] whitespace-pre-wrap">
+            <p key={index} className="text-sm text-slate-600 dark:text-slate-300 min-h-[1.25rem] whitespace-pre-wrap break-words">
               {line}
             </p>
           );
         })}
-        {!isExpanded && hasMore && (
+        {!isModal && hasMore && (
            <div className="text-sm text-slate-400 mt-1 font-medium">...</div>
         )}
       </div>
@@ -241,7 +241,10 @@ function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: strin
             <Pin size={16} className={note.isPinned ? 'fill-current' : ''} />
           </button>
 
-          <div className="pr-8">
+          <div 
+            className={`pr-8 ${isLong ? 'cursor-pointer' : ''}`}
+            onClick={() => isLong && setShowModal(true)}
+          >
             {note.title && (
               <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-2 leading-tight">{note.title}</h3>
             )}
@@ -255,11 +258,10 @@ function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: strin
               </span>
               {isLong && (
                 <button
-                  onClick={() => setIsExpanded(!isExpanded)}
+                  onClick={() => setShowModal(true)}
                   className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5 hover:underline"
                 >
-                  {isExpanded ? 'Less' : 'More'}
-                  {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  Read more
                 </button>
               )}
             </div>
@@ -280,6 +282,53 @@ function NoteItem({ note, onDelete, onEdit }: { note: Note; onDelete: (id: strin
           </div>
         </>
       )}
+
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl p-6 shadow-2xl ${theme.bg} ${theme.border} border`}
+            >
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white pr-8 leading-tight">
+                  {note.title || 'Note'}
+                </h2>
+                <button 
+                  onClick={() => setShowModal(false)} 
+                  className="p-2 text-slate-500 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors shrink-0"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="prose dark:prose-invert max-w-none">
+                {renderNoteText(note.text, true)}
+              </div>
+              <div className="mt-8 pt-4 border-t border-black/5 dark:border-white/10 flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
+                <span>Updated: {format(note.updatedAt || note.createdAt, 'MMM d, yyyy h:mm a')}</span>
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setIsEditing(true);
+                  }}
+                  className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                >
+                  <Edit2 size={14} /> Edit Note
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
