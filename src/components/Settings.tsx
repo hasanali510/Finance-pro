@@ -4,6 +4,7 @@ import { Settings as SettingsIcon, Download, Tags, DollarSign, ChevronRight, Shi
 import { UserSettings, ViewState, Transaction, Category, Account } from '../types';
 import { ToastMessage } from './Toast';
 import { translations } from '../i18n';
+import { downloadPDF, downloadCSV } from '../utils/downloadUtils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -83,39 +84,12 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
     return [headers.join(','), ...rows].join('\n');
   };
 
-  const downloadCSV = () => {
+  const handleDownloadCSV = () => {
     try {
       const csvContent = generateCSV();
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const filename = `${account.name.replace(/\s+/g, '_')}_transactions.csv`;
 
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-
-      reader.onloadend = function() {
-
-        const base64data = reader.result as string;
-        const base64 = base64data.split(',')[1];
-
-        // @ts-ignore
-        if (window.Android) {
-          // @ts-ignore
-          window.Android.downloadBase64(base64, filename, "text/csv");
-        } else {
-
-          const link = document.createElement("a");
-          const url = URL.createObjectURL(blob);
-
-          link.href = url;
-          link.download = filename;
-
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-        }
-
-      };
+      downloadCSV(csvContent, filename);
 
       addToast('CSV downloaded successfully', 'success');
 
@@ -156,27 +130,10 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
     return doc;
   };
 
-  const downloadFile = (doc: jsPDF, filename: string) => {
-    try {
-      const base64 = doc.output("datauristring").split(",")[1];
-
-      // @ts-ignore
-      if (window.Android) {
-        // @ts-ignore
-        window.Android.downloadBase64(base64, filename, "application/pdf");
-      } else {
-        doc.save(filename);
-      }
-    } catch (error) {
-      console.error("Download error:", error);
-      doc.save(filename);
-    }
-  };
-
   const handleExportPDF = () => {
     try {
       const doc = generatePDF();
-      downloadFile(doc, `${account.name.replace(/\s+/g, '_')}_Transactions.pdf`);
+      downloadPDF(doc, `${account.name.replace(/\s+/g, '_')}_Transactions.pdf`);
       addToast('PDF downloaded successfully', 'success');
     } catch (error) {
       console.error('PDF Export Error:', error);
@@ -197,7 +154,7 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
       try {
         const doc = generatePDF();
         // We download the PDF as a fallback since we can't actually email it without a backend
-        downloadFile(doc, `${account.name.replace(/\s+/g, '_')}_Backup.pdf`);
+        downloadPDF(doc, `${account.name.replace(/\s+/g, '_')}_Backup.pdf`);
         addToast(`Data saved online. PDF backup sent to ${account.email}`, 'success');
       } catch (error) {
         console.error('Online Save Error:', error);
@@ -483,7 +440,7 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
               <Download size={16} /> PDF
             </button>
             <button
-              onClick={downloadCSV}
+              onClick={handleDownloadCSV}
               className="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-900 dark:text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-black/5 dark:border-white/10"
             >
               <Download size={16} /> CSV

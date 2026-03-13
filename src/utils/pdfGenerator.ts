@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { format, subDays, subMonths, subYears, isAfter, parseISO } from 'date-fns';
+import { downloadPDF } from './downloadUtils';
 import { Transaction, Category, UserSettings } from '../types';
 
 export type ReportPeriod = 'weekly' | 'monthly' | 'yearly' | 'total';
@@ -174,15 +175,7 @@ export const generatePDFReport = async ({
   // 7. Save PDF
   const filename = `Hisab_Pro_Report_${format(now, 'yyyy-MM-dd')}.pdf`;
   try {
-    const base64 = doc.output("datauristring").split(",")[1];
-    
-    // @ts-ignore
-    if (window.Android) {
-      // @ts-ignore
-      window.Android.downloadBase64(base64, filename, "application/pdf");
-    } else {
-      doc.save(filename);
-    }
+    downloadPDF(doc, filename);
   } catch (error) {
     console.error("Download error:", error);
     doc.save(filename);
