@@ -26,22 +26,23 @@ import { Profile } from './components/Profile';
 
 interface MainAppProps {
   key?: string;
+  userId: string;
   account: Account;
   onSwitchAccount: () => void;
   onDeleteAccount: () => void;
   onUpdateAccount: (updatedAccount: Account) => void;
 }
 
-function MainApp({ account, onSwitchAccount, onDeleteAccount, onUpdateAccount }: MainAppProps) {
+function MainApp({ userId, account, onSwitchAccount, onDeleteAccount, onUpdateAccount }: MainAppProps) {
   const [view, setView] = useState<ViewState>('dashboard');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isUnlocked, setIsUnlocked] = useState(false);
   
-  const [transactions, setTransactions] = useSupabaseStorage<Transaction[]>(`smart-income-transactions-${account.id}`, []);
-  const [categories, setCategories] = useSupabaseStorage<Category[]>(`smart-income-categories-${account.id}`, DEFAULT_CATEGORIES);
-  const [notes, setNotes] = useSupabaseStorage<Note[]>(`smart-income-notes-${account.id}`, []);
-  const [settings, setSettings] = useSupabaseStorage<UserSettings>(`smart-income-settings-${account.id}`, {
+  const [transactions, setTransactions] = useSupabaseStorage<Transaction[]>(`${userId}_smart-income-transactions-${account.id}`, []);
+  const [categories, setCategories] = useSupabaseStorage<Category[]>(`${userId}_smart-income-categories-${account.id}`, DEFAULT_CATEGORIES);
+  const [notes, setNotes] = useSupabaseStorage<Note[]>(`${userId}_smart-income-notes-${account.id}`, []);
+  const [settings, setSettings] = useSupabaseStorage<UserSettings>(`${userId}_smart-income-settings-${account.id}`, {
     currency: 'USD',
     monthlyBudget: 2000,
     savingsGoal: 500,
@@ -297,12 +298,27 @@ export default function App() {
     return <Auth />;
   }
 
-  return <AppContent />;
+  return <AppContent userId={session.user.id} />;
 }
 
-function AppContent() {
-  const [accounts, setAccounts] = useSupabaseStorage<Account[]>('smart-income-accounts', []);
-  const [currentAccountId, setCurrentAccountId] = useSupabaseStorage<string | null>('smart-income-current-account', null);
+function AppContent({ userId }: { userId: string }) {
+  const [accounts, setAccounts, accountsLoaded] = useSupabaseStorage<Account[]>(`${userId}_smart-income-accounts`, []);
+  const [currentAccountId, setCurrentAccountId, currentAccountLoaded] = useSupabaseStorage<string | null>(`${userId}_smart-income-current-account`, null);
+
+  useEffect(() => {
+    if (accountsLoaded && accounts.length === 0) {
+      const defaultAccount: Account = {
+        id: uuidv4(),
+        name: 'Personal Wallet',
+        icon: 'wallet',
+        currency: 'USD',
+        themeColor: 'emerald',
+        createdAt: new Date().toISOString()
+      };
+      setAccounts([defaultAccount]);
+      setCurrentAccountId(defaultAccount.id);
+    }
+  }, [accountsLoaded, accounts.length, setAccounts, setCurrentAccountId]);
 
   const handleCreateAccount = (newAccount: Account) => {
     setAccounts([...accounts, newAccount]);
@@ -310,7 +326,7 @@ function AppContent() {
   };
 
   const handleDeleteAccount = () => {
-    if (window.confirm('Are you sure you want to delete this account completely?')) {
+    if (window.confirm('Are you sure you want to delete this wallet completely?')) {
       setAccounts(accounts.filter(a => a.id !== currentAccountId));
       setCurrentAccountId(null);
     }
@@ -321,6 +337,14 @@ function AppContent() {
   };
 
   const currentAccount = accounts.find(a => a.id === currentAccountId);
+
+  if (!accountsLoaded || !currentAccountLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!currentAccountId || !currentAccount) {
     return (
@@ -335,6 +359,7 @@ function AppContent() {
   return (
     <MainApp
       key={currentAccountId}
+      userId={userId}
       account={currentAccount}
       onSwitchAccount={() => setCurrentAccountId(null)}
       onDeleteAccount={handleDeleteAccount}

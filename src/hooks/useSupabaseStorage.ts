@@ -13,23 +13,29 @@ export function useSupabaseStorage<T>(key: string, initialValue: T) {
     }
   });
 
+  const [isLoaded, setIsLoaded] = useState(false);
+
   // Fetch latest from Supabase on mount
   useEffect(() => {
     const fetchFromSupabase = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setIsLoaded(true);
+          return;
+        }
 
         const { data, error } = await supabase
           .from('app_state')
           .select('data')
-          .eq('id', `${user.id}_${key}`)
+          .eq('id', key)
           .single();
 
         if (error) {
           if (error.code !== 'PGRST116') { // PGRST116 is "No rows found"
             console.error(`Error fetching from Supabase for key "${key}":`, error);
           }
+          setIsLoaded(true);
           return;
         }
 
@@ -40,6 +46,8 @@ export function useSupabaseStorage<T>(key: string, initialValue: T) {
         }
       } catch (error) {
         console.error(`Error in fetchFromSupabase for key "${key}":`, error);
+      } finally {
+        setIsLoaded(true);
       }
     };
 
@@ -61,7 +69,7 @@ export function useSupabaseStorage<T>(key: string, initialValue: T) {
       const { error } = await supabase
         .from('app_state')
         .upsert({ 
-          id: `${user.id}_${key}`,
+          id: key,
           user_id: user.id,
           data: valueToStore, 
           updated_at: new Date().toISOString() 
@@ -75,5 +83,5 @@ export function useSupabaseStorage<T>(key: string, initialValue: T) {
     }
   };
 
-  return [storedValue, setValue] as const;
+  return [storedValue, setValue, isLoaded] as const;
 }
