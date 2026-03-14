@@ -275,6 +275,9 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setIsLoading(false);
+    }).catch((err) => {
+      console.error('Error getting session:', err);
+      setIsLoading(false);
     });
 
     const {
