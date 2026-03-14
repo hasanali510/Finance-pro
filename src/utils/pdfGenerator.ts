@@ -5,13 +5,15 @@ import { format, subDays, subMonths, subYears, isAfter, parseISO } from 'date-fn
 import { downloadPDF } from './downloadUtils';
 import { Transaction, Category, UserSettings } from '../types';
 
-export type ReportPeriod = 'weekly' | 'monthly' | 'yearly' | 'total';
+export type ReportPeriod = 'weekly' | 'monthly' | 'yearly' | 'total' | 'custom';
 
 interface GenerateReportParams {
   transactions: Transaction[];
   categories: Category[];
   settings: UserSettings;
   period: ReportPeriod;
+  customStartDate?: Date;
+  customEndDate?: Date;
   chartElementId?: string;
 }
 
@@ -20,11 +22,14 @@ export const generatePDFReport = async ({
   categories,
   settings,
   period,
+  customStartDate,
+  customEndDate,
   chartElementId
 }: GenerateReportParams) => {
   // 1. Filter transactions based on period
   const now = new Date();
   let startDate = new Date(0); // default to beginning of time for 'total'
+  let endDate = now;
   let periodLabel = 'All Time';
 
   if (period === 'weekly') {
@@ -36,9 +41,16 @@ export const generatePDFReport = async ({
   } else if (period === 'yearly') {
     startDate = subYears(now, 1);
     periodLabel = `Last 12 Months (${format(startDate, 'MMM dd, yyyy')} - ${format(now, 'MMM dd, yyyy')})`;
+  } else if (period === 'custom' && customStartDate && customEndDate) {
+    startDate = customStartDate;
+    endDate = customEndDate;
+    periodLabel = `Custom Period (${format(startDate, 'MMM dd, yyyy')} - ${format(endDate, 'MMM dd, yyyy')})`;
   }
 
-  const filteredTransactions = transactions.filter(t => isAfter(parseISO(t.date), startDate));
+  const filteredTransactions = transactions.filter(t => {
+    const tDate = parseISO(t.date);
+    return isAfter(tDate, startDate) && !isAfter(tDate, endDate);
+  });
   
   // Calculate summaries
   const totalIncome = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
