@@ -36,8 +36,19 @@ interface MainAppProps {
 function MainApp({ userId, account, onSwitchAccount, onDeleteAccount, onUpdateAccount }: MainAppProps) {
   const [view, setView] = useState<ViewState>('dashboard');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  
+  const isProfileComplete = Boolean(account.name && account.profession && account.email && account.mobile);
+
+  const handleViewChange = (newView: ViewState) => {
+    if (newView === 'notes' && !isProfileComplete) {
+      setIsPremiumModalOpen(true);
+      return;
+    }
+    setView(newView);
+  };
   
   const [transactions, setTransactions] = useSupabaseStorage<Transaction[]>(`${userId}_smart-income-transactions-${account.id}`, []);
   const [categories, setCategories] = useSupabaseStorage<Category[]>(`${userId}_smart-income-categories-${account.id}`, DEFAULT_CATEGORIES);
@@ -181,9 +192,9 @@ function MainApp({ userId, account, onSwitchAccount, onDeleteAccount, onUpdateAc
               transactions={transactions}
               categories={categories}
               settings={settings}
-              onViewAll={() => setView('reports')}
-              onProfileClick={() => setView('profile')}
-              onViewNotes={() => setView('notes')}
+              onViewAll={() => handleViewChange('reports')}
+              onProfileClick={() => handleViewChange('profile')}
+              onViewNotes={() => handleViewChange('notes')}
             />
           </motion.div>
         )}
@@ -204,7 +215,7 @@ function MainApp({ userId, account, onSwitchAccount, onDeleteAccount, onUpdateAc
               onAdd={handleAddCategory}
               onDelete={handleDeleteCategory}
               onEdit={handleEditCategory}
-              onBack={() => setView('settings')}
+              onBack={() => handleViewChange('settings')}
               settings={settings}
             />
           </motion.div>
@@ -215,7 +226,7 @@ function MainApp({ userId, account, onSwitchAccount, onDeleteAccount, onUpdateAc
               account={account}
               settings={settings}
               onUpdateSettings={setSettings}
-              onChangeView={setView}
+              onChangeView={handleViewChange}
               transactions={transactions}
               categories={categories}
               onSwitchAccount={onSwitchAccount}
@@ -241,7 +252,7 @@ function MainApp({ userId, account, onSwitchAccount, onDeleteAccount, onUpdateAc
             <Profile
               account={account}
               onUpdateAccount={onUpdateAccount}
-              onBack={() => setView('dashboard')}
+              onBack={() => handleViewChange('dashboard')}
               addToast={addToast}
               settings={settings}
             />
@@ -251,7 +262,7 @@ function MainApp({ userId, account, onSwitchAccount, onDeleteAccount, onUpdateAc
 
       <BottomNav
         currentView={view}
-        onChangeView={setView}
+        onChangeView={handleViewChange}
         onAddClick={() => setIsAddModalOpen(true)}
         settings={settings}
       />
@@ -263,6 +274,55 @@ function MainApp({ userId, account, onSwitchAccount, onDeleteAccount, onUpdateAc
         categories={categories}
         settings={settings}
       />
+
+      <AnimatePresence>
+        {isPremiumModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setIsPremiumModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20 mb-4">
+                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Premium Feature</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                  Notepad is a premium feature. Please complete your profile (Profession, Mobile) to unlock it for free!
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setIsPremiumModalOpen(false);
+                      handleViewChange('profile');
+                    }}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl font-medium transition-colors"
+                  >
+                    Complete Profile Now
+                  </button>
+                  <button
+                    onClick={() => setIsPremiumModalOpen(false)}
+                    className="w-full py-3 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors"
+                  >
+                    Maybe Later
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -301,10 +361,11 @@ export default function App() {
     return <Auth />;
   }
 
-  return <AppContent userId={session.user.id} />;
+  return <AppContent session={session} />;
 }
 
-function AppContent({ userId }: { userId: string }) {
+function AppContent({ session }: { session: Session }) {
+  const userId = session.user.id;
   const [accounts, setAccounts, accountsLoaded] = useSupabaseStorage<Account[]>(`${userId}_smart-income-accounts`, []);
   const [currentAccountId, setCurrentAccountId, currentAccountLoaded] = useSupabaseStorage<string | null>(`${userId}_smart-income-current-account`, null);
 
@@ -312,18 +373,22 @@ function AppContent({ userId }: { userId: string }) {
     if (accountsLoaded && accounts.length === 0) {
       const defaultAccount: Account = {
         id: uuidv4(),
-        name: 'Personal Wallet',
-        icon: 'wallet',
-        currency: 'USD',
+        name: session.user.user_metadata?.full_name || 'Personal Wallet',
+        avatar: (session.user.user_metadata?.full_name || 'P').substring(0, 2).toUpperCase(),
+        email: session.user.email,
         themeColor: 'emerald',
         createdAt: new Date().toISOString()
       };
       setAccounts([defaultAccount]);
       setCurrentAccountId(defaultAccount.id);
     }
-  }, [accountsLoaded, accounts.length, setAccounts, setCurrentAccountId]);
+  }, [accountsLoaded, accounts.length, setAccounts, setCurrentAccountId, session]);
 
   const handleCreateAccount = (newAccount: Account) => {
+    if (accounts.length >= 3) {
+      alert('You can only create up to 3 profiles.');
+      return;
+    }
     setAccounts([...accounts, newAccount]);
     setCurrentAccountId(newAccount.id);
   };
