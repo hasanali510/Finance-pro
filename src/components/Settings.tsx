@@ -21,12 +21,22 @@ interface SettingsProps {
   addToast: (message: string, type?: ToastMessage['type']) => void;
 }
 
+import { supabase } from '../lib/supabase';
+
 export function Settings({ account, settings, onUpdateSettings, onChangeView, transactions, categories, onSwitchAccount, onDeleteAccount, onResetData, addToast }: SettingsProps) {
   const [budgetInput, setBudgetInput] = useState(settings.monthlyBudget.toString());
   const [savingsInput, setSavingsInput] = useState(settings.savingsGoal.toString());
   const [isLockEnabled, setIsLockEnabled] = useState(!!settings.pinLock);
   const [pinInput, setPinInput] = useState(settings.pinLock || '');
   const [isSavingOnline, setIsSavingOnline] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
 
   const handleSaveBudget = () => {
     const val = parseFloat(budgetInput);
@@ -452,6 +462,21 @@ export function Settings({ account, settings, onUpdateSettings, onChangeView, tr
         <div className="pt-4">
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2">{t.dangerZone}</p>
           <div className="space-y-2">
+            <button
+              onClick={handleLogout}
+              className="w-full glass-card p-3.5 flex items-center justify-between group hover:bg-slate-500/10 transition-colors border border-transparent hover:border-slate-500/30"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-slate-500/10 flex items-center justify-center group-hover:bg-slate-500/20 transition-colors shrink-0">
+                  <LogOut className="text-slate-500 dark:text-slate-400" size={14} />
+                </div>
+                <div className="text-left">
+                  <h2 className="text-slate-700 dark:text-slate-300 font-medium text-sm">Log Out</h2>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Sign out of your account</p>
+                </div>
+              </div>
+            </button>
+
             <button
               onClick={onResetData}
               className="w-full glass-card p-3.5 flex items-center justify-between group hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/30"

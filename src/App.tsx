@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from './lib/supabase';
+import { useSupabaseStorage } from './hooks/useSupabaseStorage';
 import { Transaction, Category, ViewState, UserSettings, Account, Note } from './types';
 import { DEFAULT_CATEGORIES } from './constants';
 
@@ -17,6 +19,7 @@ import { ToastContainer, ToastMessage } from './components/Toast';
 import { Onboarding } from './components/Onboarding';
 import { PinLock } from './components/PinLock';
 import { AccountSelector } from './components/AccountSelector';
+import { Auth } from './components/Auth';
 
 import { Notes } from './components/Notes';
 import { Profile } from './components/Profile';
@@ -35,10 +38,10 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount, onUpdateAccount }:
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isUnlocked, setIsUnlocked] = useState(false);
   
-  const [transactions, setTransactions] = useLocalStorage<Transaction[]>(`smart-income-transactions-${account.id}`, []);
-  const [categories, setCategories] = useLocalStorage<Category[]>(`smart-income-categories-${account.id}`, DEFAULT_CATEGORIES);
-  const [notes, setNotes] = useLocalStorage<Note[]>(`smart-income-notes-${account.id}`, []);
-  const [settings, setSettings] = useLocalStorage<UserSettings>(`smart-income-settings-${account.id}`, {
+  const [transactions, setTransactions] = useSupabaseStorage<Transaction[]>(`smart-income-transactions-${account.id}`, []);
+  const [categories, setCategories] = useSupabaseStorage<Category[]>(`smart-income-categories-${account.id}`, DEFAULT_CATEGORIES);
+  const [notes, setNotes] = useSupabaseStorage<Note[]>(`smart-income-notes-${account.id}`, []);
+  const [settings, setSettings] = useSupabaseStorage<UserSettings>(`smart-income-settings-${account.id}`, {
     currency: 'USD',
     monthlyBudget: 2000,
     savingsGoal: 500,
@@ -264,8 +267,42 @@ function MainApp({ account, onSwitchAccount, onDeleteAccount, onUpdateAccount }:
 }
 
 export default function App() {
-  const [accounts, setAccounts] = useLocalStorage<Account[]>('smart-income-accounts', []);
-  const [currentAccountId, setCurrentAccountId] = useLocalStorage<string | null>('smart-income-current-account', null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
+
+  return <AppContent />;
+}
+
+function AppContent() {
+  const [accounts, setAccounts] = useSupabaseStorage<Account[]>('smart-income-accounts', []);
+  const [currentAccountId, setCurrentAccountId] = useSupabaseStorage<string | null>('smart-income-current-account', null);
 
   const handleCreateAccount = (newAccount: Account) => {
     setAccounts([...accounts, newAccount]);
